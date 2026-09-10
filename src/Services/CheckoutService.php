@@ -1,0 +1,187 @@
+<?php
+
+namespace HBM\Services;
+
+use HBM\Repositories\CheckoutRepository;
+use HBM\Repositories\StoreRepository;
+use Exception;
+
+class CheckoutService {
+    private CheckoutRepository $checkoutRepo;
+    private StoreRepository $storeRepo;
+
+    public function __construct() {
+        $this->checkoutRepo = new CheckoutRepository();
+        $this->storeRepo = new StoreRepository();
+    }
+
+    public function getUserAddresses(int $userId): array {
+        return $this->checkoutRepo->getUserAddresses($userId);
+    }
+
+    public function saveAddress(int $userId, array $data): array {
+        $required = ['first_name', 'last_name', 'phone', 'address_line_1', 'city', 'state', 'pincode'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                throw new Exception("Field '$field' is required.");
+            }
+        }
+        
+        $addressId = $this->checkoutRepo->saveAddress($userId, $data);
+        return $this->checkoutRepo->getAddressById($addressId, $userId);
+    }
+
+    public function createOrder(int $userId, array $orderData): array {
+        $cartItems = $this->storeRepo->getCartByUserId($userId);
+        if (empty($cartItems)) {
+            throw new Exception("Cart is empty. Cannot create order.");
+        }
+
+        $addressId = $orderData['address_id'] ?? null;
+        if (!$addressId) {
+            throw new Exception("Shipping address is required.");
+        }
+
+        $address = $this->checkoutRepo->getAddressById((int)$addressId, $userId);
+        if (!$address) {
+            throw new Exception("Invalid shipping address.");
+        }
+
+        $paymentMethod = $orderData['payment_method'] ?? 'cod';
+        if (!in_array($paymentMethod, ['upi', 'card', 'net_banking', 'cod'])) {
+            throw new Exception("Invalid payment method.");
+        }
+
+        // Calculate totals server-side
+        $subtotal = 0;
+        foreach ($cartItems as $item) {
+            $subtotal += ($item['price'] * $item['quantity']);
+        }
+        
+        // Simple shipping logic
+        $shippingFee = $subtotal > 500 ? 0 : 50; 
+        $totalAmount = $subtotal + $shippingFee;
+        
+        $orderNumber = 'HBM' . date('ymdHis') . rand(100, 999);
+
+        try {
+            $this->checkoutRepo->beginTransaction();
+
+            $orderId = $this->checkoutRepo->createOrder([
+                'order_number' => $orderNumber,
+                'user_id' => $userId,
+                'subtotal' => $subtotal,
+                'shipping_fee' => $shippingFee,
+                'total_amount' => $totalAmount,
+                'payment_method' => $paymentMethod,
+                'payment_status' => 'pending',
+                'order_status' => ($paymentMethod === 'cod') ? 'processing' : 'pending',
+                
+                // Snapshot address
+                'shipping_first_name' => $address['first_name'],
+                'shipping_last_name' => $address['last_name'],
+                'shipping_phone' => $address['phone'],
+                'shipping_email' => $address['email'],
+                'shipping_address_line_1' => $address['address_line_1'],
+                'shipping_address_line_2' => $address['address_line_2'],
+                'shipping_city' => $address['city'],
+                'shipping_state' => $address['state'],
+                'shipping_pincode' => $address['pincode'],
+                'shipping_landmark' => $address['landmark']
+            ]);
+
+            foreach ($cartItems as $item) {
+                // Reduce stock
+                $this->checkoutRepo->updateProductStock($item['id'], $item['quantity']);
+
+                // Create Order Item
+                $this->checkoutRepo->createOrderItem([
+                    'order_id' => $orderId,
+                    'product_id' => $item['id'],
+                    'product_name_snapshot' => $item['name'],
+                    'price_snapshot' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'is_digital' => $item['is_digital']
+                ]);
+            }
+
+            // Create Payment Record
+            $razorpayOrderId = null;
+            if ($paymentMethod !== 'cod') {
+                // Mock Razorpay Order ID for development flow
+                $razorpayOrderId = 'order_' . uniqid();
+            }
+
+            $this->checkoutRepo->createPaymentRecord([
+                'order_id' => $orderId,
+                'amount' => $totalAmount,
+                'currency' => 'INR',
+                'payment_method' => $paymentMethod,
+                'status' => 'created',
+                'razorpay_order_id' => $razorpayOrderId
+            ]);
+
+            // Clear Cart
+            $this->checkoutRepo->clearCart($userId);
+
+            $this->checkoutRepo->commit();
+
+            return [
+                'order_id' => $orderId,
+                'order_number' => $orderNumber,
+                'total_amount' => $totalAmount,
+                'payment_method' => $paymentMethod,
+                'razorpay_order_id' => $razorpayOrderId
+            ];
+
+        } catch (Exception $e) {
+            $this->checkoutRepo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function verifyPayment(int $userId, array $data): array {
+        $orderId = $data['order_id'] ?? null;
+        $razorpayPaymentId = $data['razorpay_payment_id'] ?? null;
+        $status = $data['status'] ?? 'captured'; // Mock flow
+
+        if (!$orderId) {
+            throw new Exception("Order ID is required.");
+        }
+
+        $order = $this->checkoutRepo->getOrderDetails((int)$orderId, $userId);
+        if (!$order) {
+            throw new Exception("Order not found or access denied.");
+        }
+
+        if ($order['payment_status'] === 'success') {
+            throw new Exception("Order is already paid.");
+        }
+
+        // Normally we would verify signature here. 
+        // For development flow, we accept the mock success.
+        
+        $this->checkoutRepo->updatePaymentStatus((int)$orderId, $status, [
+            'razorpay_payment_id' => $razorpayPaymentId,
+            'razorpay_signature' => $data['razorpay_signature'] ?? 'mock_signature'
+        ]);
+
+        if ($status === 'captured') {
+            $this->checkoutRepo->updateOrderStatus((int)$orderId, 'processing');
+        }
+
+        return ['status' => 'success', 'order_id' => $orderId];
+    }
+
+    public function getUserOrders(int $userId): array {
+        return $this->checkoutRepo->getUserOrders($userId);
+    }
+
+    public function getOrderDetails(int $orderId, int $userId): array {
+        $order = $this->checkoutRepo->getOrderDetails($orderId, $userId);
+        if (!$order) {
+            throw new Exception("Order not found.");
+        }
+        return $order;
+    }
+}
