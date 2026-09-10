@@ -8,9 +8,11 @@ use Exception;
 
 class AuthService {
     private AuthRepository $authRepo;
+    private EmailService $emailService;
 
     public function __construct() {
         $this->authRepo = new AuthRepository();
+        $this->emailService = new EmailService();
     }
 
     public function register(array $data): array {
@@ -27,24 +29,27 @@ class AuthService {
             throw new Exception("Invalid phone format.");
         }
 
-        if (strlen($data['password']) < 8) {
-            throw new Exception("Password must be at least 8 characters.");
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', $data['password'])) {
+            throw new Exception("Password must be at least 8 characters, and include one uppercase letter, one lowercase letter, one number, and one special character.");
         }
 
-        // Check Duplicates
-        if ($this->authRepo->getUserByEmailOrPhone($data['email'])) {
-            throw new Exception("Email already registered.");
-        }
-        if (!empty($data['phone']) && $this->authRepo->getUserByEmailOrPhone($data['phone'])) {
-            throw new Exception("Phone already registered.");
-        }
-
-        // Hash and Save
         $data['password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
         $data['role_id'] = 4; // User role
 
-        $userId = $this->authRepo->createUser($data);
-        
+        // Check Duplicates
+        $existingUser = $this->authRepo->getUserByEmailOrPhone($data['email']);
+        if ($existingUser) {
+            // If the existing user is inactive, we can override their registration
+            if ($existingUser['status'] === 'inactive') {
+                $this->authRepo->updateUnverifiedUser($existingUser['id'], $data);
+                $userId = $existingUser['id'];
+            } else {
+                throw new Exception("Email already registered and active.");
+            }
+        } else {
+            $userId = $this->authRepo->createUser($data);
+        }
+
         $this->generateOtp($data['email'], 'registration');
         Logger::info("New user registered", ['user_id' => $userId, 'email' => $data['email']]);
 
@@ -92,11 +97,22 @@ class AuthService {
     public function generateOtp(string $identifier, string $type): void {
         $code = (string)random_int(100000, 999999);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
-        
+
         $this->authRepo->createOtp($identifier, $code, $type, $expiresAt);
-        
+
         // Log safely (mock sending SMS/Email for local dev)
         Logger::info("OTP Generated", ['identifier' => $identifier, 'type' => $type, 'otp_mock' => $code]);
+
+        // Send OTP via Email using ZeptoMail
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $subject = "Your Healthy Bharat Mission OTP";
+            $message = "<div>Hello, <br><br>Your OTP for $type is: <b>$code</b>.<br>This OTP is valid for 10 minutes.<br><br>Thank you,<br>Healthy Bharat Mission Team</div>";
+            try {
+                $this->emailService->sendEmail($identifier, $subject, $message);
+            } catch (Exception $e) {
+                Logger::error("Failed to send OTP email to $identifier", ['error' => $e->getMessage()]);
+            }
+        }
     }
 
     public function verifyOtp(string $identifier, string $code, string $type): bool|string {
@@ -124,8 +140,14 @@ class AuthService {
         if ($type === 'registration') {
             $user = $this->authRepo->getUserByEmailOrPhone($identifier);
             if ($user) {
+                // Activate the account
+                if ($user['status'] === 'inactive') {
+                    $this->authRepo->updateUserStatus($user['id'], 'active');
+                }
+                
                 $token = bin2hex(random_bytes(32));
-                $this->authRepo->createSession($user['id'], $token, $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '');
+                $expiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
+                $this->authRepo->createSession($user['id'], $token, $_SERVER['REMOTE_ADDR'] ?? '', $_SERVER['HTTP_USER_AGENT'] ?? '', $expiresAt);
                 return $token;
             }
         }
@@ -142,8 +164,21 @@ class AuthService {
             
             $this->authRepo->createPasswordReset($user['email'], $token, $expiresAt);
             
-            // Mock email sending
+            // Log the generated token
             Logger::info("Password reset token generated", ['email' => $user['email'], 'token_mock' => $token]);
+
+            // Send Reset Link via Email using ZeptoMail
+            if (filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
+                $baseUrl = $_ENV['FRONTEND_URL'] ?? $_ENV['APP_URL'];
+                $resetLink = $baseUrl . "/auth/reset-password.html?token=" . $token;
+                $subject = "Reset your Healthy Bharat Mission password";
+                $message = "<div>Hello,<br><br>You requested to reset your password. Click the link below to set a new password:<br><br><a href='$resetLink'>$resetLink</a><br><br>This link is valid for 1 hour.<br><br>Thank you,<br>Healthy Bharat Mission Team</div>";
+                try {
+                    $this->emailService->sendEmail($user['email'], $subject, $message);
+                } catch (Exception $e) {
+                    Logger::error("Failed to send password reset email to " . $user['email'], ['error' => $e->getMessage()]);
+                }
+            }
         }
     }
 
@@ -152,8 +187,8 @@ class AuthService {
             throw new Exception("Passwords do not match.");
         }
 
-        if (strlen($newPassword) < 8) {
-            throw new Exception("Password must be at least 8 characters.");
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', $newPassword)) {
+            throw new Exception("Password must be at least 8 characters, and include one uppercase letter, one lowercase letter, one number, and one special character.");
         }
 
         $reset = $this->authRepo->getValidPasswordReset($token);

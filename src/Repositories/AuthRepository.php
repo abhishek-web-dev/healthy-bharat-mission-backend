@@ -30,18 +30,40 @@ class AuthRepository {
     public function createUser(array $data): int {
         $db = Database::getConnection();
         $stmt = $db->prepare("
-            INSERT INTO users (first_name, last_name, email, phone, password_hash, role_id)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO users (first_name, last_name, email, phone, password_hash, role_id, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'inactive')
         ");
         $stmt->execute([
             $data['first_name'],
             $data['last_name'],
             $data['email'],
-            $data['phone'],
+            $data['phone'] ?? null,
             $data['password_hash'],
             $data['role_id'] // 4 for 'user'
         ]);
         return (int)$db->lastInsertId();
+    }
+
+    public function updateUnverifiedUser(int $id, array $data): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            UPDATE users 
+            SET first_name = ?, last_name = ?, phone = ?, password_hash = ?
+            WHERE id = ? AND status = 'inactive'
+        ");
+        $stmt->execute([
+            $data['first_name'],
+            $data['last_name'],
+            $data['phone'] ?? null,
+            $data['password_hash'],
+            $id
+        ]);
+    }
+
+    public function updateUserStatus(int $id, string $status): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("UPDATE users SET status = ? WHERE id = ?");
+        $stmt->execute([$status, $id]);
     }
 
     public function createSession(int $userId, string $token, string $ip, string $userAgent, string $expiresAt): void {
@@ -110,8 +132,8 @@ class AuthRepository {
     // Password Reset
     public function createPasswordReset(string $email, string $token, string $expiresAt): void {
         $db = Database::getConnection();
-        $stmt = $db->prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)");
-        $stmt->execute([$email, $token, $expiresAt]);
+        $stmt = $db->prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))");
+        $stmt->execute([$email, $token]);
     }
 
     public function getValidPasswordReset(string $token): ?array {

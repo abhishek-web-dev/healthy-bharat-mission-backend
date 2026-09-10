@@ -82,7 +82,13 @@ class StoreRepository {
 
     public function getProductCategories(): array {
         $db = Database::getConnection();
-        $stmt = $db->query("SELECT * FROM product_categories ORDER BY name ASC");
+        $stmt = $db->query("
+            SELECT c.*, COUNT(p.id) as product_count 
+            FROM product_categories c 
+            LEFT JOIN products p ON c.id = p.category_id AND p.is_active = 1 AND p.deleted_at IS NULL
+            GROUP BY c.id 
+            ORDER BY c.name ASC
+        ");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
