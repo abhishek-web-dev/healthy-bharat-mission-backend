@@ -3,6 +3,8 @@
     "description": "Backend API for Healthy Bharat Mission",
     "type": "project",
     "require": {
-        "php": ">=8.1"
+        "php": ">=8.1",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*"
     }
 }
