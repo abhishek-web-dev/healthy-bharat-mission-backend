@@ -50,8 +50,15 @@ class AuthService {
             $userId = $this->authRepo->createUser($data);
         }
 
-        $this->generateOtp($data['email'], 'registration');
-        Logger::info("New user registered", ['user_id' => $userId, 'email' => $data['email']]);
+        // If no email service is configured, auto-activate the user so they can login immediately
+        $hasEmailService = !empty($_ENV['MAIL_API_KEY'] ?? getenv('MAIL_API_KEY'));
+        if (!$hasEmailService) {
+            $this->authRepo->updateUserStatus($userId, 'active');
+            Logger::info("New user registered (auto-activated, no email service)", ['user_id' => $userId, 'email' => $data['email']]);
+        } else {
+            $this->generateOtp($data['email'], 'registration');
+            Logger::info("New user registered", ['user_id' => $userId, 'email' => $data['email']]);
+        }
 
         return [
             'id' => $userId,
