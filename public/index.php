@@ -4,6 +4,10 @@
  * Healthy Bharat Mission - Backend Entry Point
  */
 
+// Disable display_errors so warnings don't corrupt JSON responses
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
 // Allow direct PHP file access (e.g. migrate.php) when using built-in server router
 if (php_sapi_name() === 'cli-server') {
     $file = __DIR__ . $_SERVER['REQUEST_URI'];
