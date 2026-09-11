@@ -4,6 +4,16 @@
  * Healthy Bharat Mission - Backend Entry Point
  */
 
+// Allow direct PHP file access (e.g. migrate.php) when using built-in server router
+if (php_sapi_name() === 'cli-server') {
+    $file = __DIR__ . $_SERVER['REQUEST_URI'];
+    $file = strtok($file, '?'); // strip query string
+    if ($file !== __FILE__ && file_exists($file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
+        require $file;
+        exit;
+    }
+}
+
 // Basic Class Autoloader
 spl_autoload_register(function ($class) {
     $prefix = 'HBM\\';
