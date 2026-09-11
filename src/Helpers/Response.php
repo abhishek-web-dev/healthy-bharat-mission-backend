@@ -10,7 +10,7 @@ class Response {
         exit;
     }
 
-    public static function success(string $message, array $data = [], int $statusCode = 200): void {
+    public static function success(string $message, ?array $data = null, int $statusCode = 200): void {
         self::json([
             'success' => true,
             'message' => $message,

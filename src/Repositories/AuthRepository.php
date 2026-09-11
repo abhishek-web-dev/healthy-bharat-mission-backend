@@ -159,4 +159,13 @@ class AuthRepository {
         $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE email = ?");
         $stmt->execute([$hash, $email]);
     }
+
+    public function updatePassword(int $userId, string $passwordHash): bool {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("UPDATE users SET password_hash = :hash, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+        return $stmt->execute([
+            'hash' => $passwordHash,
+            'id' => $userId
+        ]);
+    }
 }

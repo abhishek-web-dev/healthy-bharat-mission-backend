@@ -209,4 +209,49 @@ class AuthService {
         
         Logger::info("Password reset successful", ['email' => $reset['email']]);
     }
+
+    public function changePassword(int $userId, string $currentPassword, string $newPassword, string $confirmPassword): void {
+        if ($newPassword !== $confirmPassword) {
+            throw new Exception("New passwords do not match.");
+        }
+
+        if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', $newPassword)) {
+            throw new Exception("Password must be at least 8 characters, and include one uppercase letter, one lowercase letter, one number, and one special character.");
+        }
+
+        // Get user to check current password
+        $db = \HBM\Core\Database::getConnection();
+        $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
+            throw new Exception("Current password is incorrect.");
+        }
+
+        $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $this->authRepo->updatePassword($userId, $hash);
+        $this->authRepo->deleteAllUserSessions($userId);
+        
+        Logger::info("User changed password successfully", ['user_id' => $userId]);
+    }
+
+    public function deleteAccount(int $userId, string $password): void {
+        $db = \HBM\Core\Database::getConnection();
+        $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user || !password_verify($password, $user['password_hash'])) {
+            throw new Exception("Incorrect password.");
+        }
+
+        // Delete user (due to foreign keys, might need to delete sessions first, or let cascading handle it)
+        $this->authRepo->deleteAllUserSessions($userId);
+        
+        $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        
+        Logger::info("User deleted account", ['user_id' => $userId]);
+    }
 }

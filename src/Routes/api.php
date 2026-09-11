@@ -26,6 +26,64 @@ $router->post('/api/auth/logout', function() use ($router) {
     AuthMiddleware::handle();
     (new AuthController())->logout();
 });
+$router->post('/api/auth/change-password', function() use ($router) {
+    AuthMiddleware::handle();
+    (new AuthController())->changePassword();
+});
+$router->post('/api/auth/delete-account', function() use ($router) {
+    AuthMiddleware::handle();
+    (new AuthController())->deleteAccount();
+});
+
+// User Profile Routes (Protected)
+use HBM\Controllers\UserController;
+$router->get('/api/user/profile', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->getProfile();
+});
+$router->put('/api/user/profile', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->updateProfile();
+});
+$router->post('/api/user/health-conditions', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->addHealthCondition();
+});
+$router->post('/api/user/allergies', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->addAllergy();
+});
+$router->post('/api/user/emergency-contacts', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->addEmergencyContact();
+});
+$router->get('/api/user/programs', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->getPrograms();
+});
+$router->get('/api/user/documents', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->getDocuments();
+});
+$router->post('/api/user/documents', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->uploadDocument();
+});
+$router->delete('/api/user/documents/{id}', function($id) use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->deleteDocument($id);
+});
+$router->get('/api/user/documents/{id}/download', function($id) use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->downloadDocument($id);
+});
+
+// Food Charts
+use HBM\Controllers\FoodChartController;
+$router->get('/api/user/food-charts', function() use ($router) {
+    AuthMiddleware::handle();
+    (new FoodChartController())->getFoodCharts();
+});
 
 // Content Routes (Public)
 use HBM\Controllers\ContentController;
@@ -96,6 +154,14 @@ $router->get('/api/user/addresses', function() use ($router) {
 $router->post('/api/user/addresses', function() use ($router) {
     AuthMiddleware::handle();
     (new CheckoutController())->saveAddress();
+});
+$router->put('/api/user/addresses/{id}', function($id) use ($router) {
+    AuthMiddleware::handle();
+    (new CheckoutController())->updateAddress((int)$id);
+});
+$router->delete('/api/user/addresses/{id}', function($id) use ($router) {
+    AuthMiddleware::handle();
+    (new CheckoutController())->deleteAddress((int)$id);
 });
 $router->post('/api/orders', function() use ($router) {
     AuthMiddleware::handle();

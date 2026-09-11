@@ -59,6 +59,36 @@ class CheckoutRepository {
         return (int)$this->getDb()->lastInsertId();
     }
 
+    public function updateAddress(int $userId, int $addressId, array $data): void {
+        $stmt = $this->getDb()->prepare("
+            UPDATE user_addresses SET
+                type = :type, first_name = :first_name, last_name = :last_name, phone = :phone, email = :email,
+                address_line_1 = :address_line_1, address_line_2 = :address_line_2, city = :city, state = :state, pincode = :pincode, landmark = :landmark, is_default = :is_default
+            WHERE id = :id AND user_id = :user_id
+        ");
+        $stmt->execute([
+            'id' => $addressId,
+            'user_id' => $userId,
+            'type' => $data['type'] ?? 'home',
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'phone' => $data['phone'],
+            'email' => $data['email'] ?? null,
+            'address_line_1' => $data['address_line_1'],
+            'address_line_2' => $data['address_line_2'] ?? null,
+            'city' => $data['city'],
+            'state' => $data['state'],
+            'pincode' => $data['pincode'],
+            'landmark' => $data['landmark'] ?? null,
+            'is_default' => !empty($data['is_default']) ? 1 : 0
+        ]);
+    }
+
+    public function deleteAddress(int $userId, int $addressId): void {
+        $stmt = $this->getDb()->prepare("DELETE FROM user_addresses WHERE id = ? AND user_id = ?");
+        $stmt->execute([$addressId, $userId]);
+    }
+
     // --- Order Operations ---
 
     public function beginTransaction(): void {

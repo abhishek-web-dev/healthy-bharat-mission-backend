@@ -35,6 +35,28 @@ class CheckoutController {
         }
     }
 
+    public function updateAddress(int $id): void {
+        global $authUser;
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        try {
+            $address = $this->checkoutService->updateAddress($authUser['id'], $id, $input);
+            Response::success('Address updated successfully.', $address);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function deleteAddress(int $id): void {
+        global $authUser;
+        try {
+            $this->checkoutService->deleteAddress($authUser['id'], $id);
+            Response::success('Address deleted successfully.');
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
     public function createOrder(): void {
         global $authUser;
         $input = json_decode(file_get_contents('php://input'), true) ?? [];

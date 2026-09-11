@@ -31,6 +31,31 @@ class CheckoutService {
         return $this->checkoutRepo->getAddressById($addressId, $userId);
     }
 
+    public function updateAddress(int $userId, int $addressId, array $data): array {
+        $required = ['first_name', 'last_name', 'phone', 'address_line_1', 'city', 'state', 'pincode'];
+        foreach ($required as $field) {
+            if (empty($data[$field])) {
+                throw new Exception("Field '$field' is required.");
+            }
+        }
+        
+        $address = $this->checkoutRepo->getAddressById($addressId, $userId);
+        if (!$address) {
+            throw new Exception("Address not found.");
+        }
+        
+        $this->checkoutRepo->updateAddress($userId, $addressId, $data);
+        return $this->checkoutRepo->getAddressById($addressId, $userId);
+    }
+
+    public function deleteAddress(int $userId, int $addressId): void {
+        $address = $this->checkoutRepo->getAddressById($addressId, $userId);
+        if (!$address) {
+            throw new Exception("Address not found.");
+        }
+        $this->checkoutRepo->deleteAddress($userId, $addressId);
+    }
+
     public function createOrder(int $userId, array $orderData): array {
         $cartItems = $this->storeRepo->getCartByUserId($userId);
         if (empty($cartItems)) {
@@ -58,9 +83,11 @@ class CheckoutService {
             $subtotal += ($item['price'] * $item['quantity']);
         }
         
-        // Simple shipping logic
-        $shippingFee = $subtotal > 500 ? 0 : 50; 
-        $totalAmount = $subtotal + $shippingFee;
+        $discount = isset($orderData['discount']) ? (float)$orderData['discount'] : 0.0;
+        $taxableAmount = max(0, $subtotal - $discount);
+        $shippingFee = ($taxableAmount > 0 && $taxableAmount < 499) ? 59 : 0;
+        $tax = $taxableAmount * 0.05;
+        $totalAmount = $taxableAmount + $shippingFee + $tax;
         
         $orderNumber = 'HBM' . date('ymdHis') . rand(100, 999);
 
@@ -75,7 +102,7 @@ class CheckoutService {
                 'total_amount' => $totalAmount,
                 'payment_method' => $paymentMethod,
                 'payment_status' => 'pending',
-                'order_status' => ($paymentMethod === 'cod') ? 'processing' : 'pending',
+                'order_status' => 'processing',
                 
                 // Snapshot address
                 'shipping_first_name' => $address['first_name'],
@@ -108,8 +135,32 @@ class CheckoutService {
             // Create Payment Record
             $razorpayOrderId = null;
             if ($paymentMethod !== 'cod') {
-                // Mock Razorpay Order ID for development flow
-                $razorpayOrderId = 'order_' . uniqid();
+                $razorpayKeyId = 'rzp_test_Smv6k8a60175SA';
+                $razorpayKeySecret = 'sLn07yqcnOszdIXXa25HZ3oI';
+                
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, 'https://api.razorpay.com/v1/orders');
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                    'amount' => $totalAmount * 100, // Amount in paise
+                    'currency' => 'INR',
+                    'receipt' => $orderNumber
+                ]));
+                curl_setopt($ch, CURLOPT_USERPWD, $razorpayKeyId . ':' . $razorpayKeySecret);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                
+                $response = curl_exec($ch);
+                if (curl_errno($ch)) {
+                    throw new Exception("Payment gateway error: " . curl_error($ch));
+                }
+                curl_close($ch);
+                
+                $rzpData = json_decode($response, true);
+                if (empty($rzpData['id'])) {
+                    throw new Exception("Failed to create Razorpay order.");
+                }
+                $razorpayOrderId = $rzpData['id'];
             }
 
             $this->checkoutRepo->createPaymentRecord([
@@ -158,12 +209,25 @@ class CheckoutService {
             throw new Exception("Order is already paid.");
         }
 
-        // Normally we would verify signature here. 
-        // For development flow, we accept the mock success.
+        $razorpayOrderId = $data['razorpay_order_id'] ?? null;
+        $razorpaySignature = $data['razorpay_signature'] ?? null;
+        
+        if ($order['payment_method'] !== 'cod') {
+            if (!$razorpayPaymentId || !$razorpayOrderId || !$razorpaySignature) {
+                throw new Exception("Missing Razorpay payment details.");
+            }
+            
+            $razorpayKeySecret = 'sLn07yqcnOszdIXXa25HZ3oI';
+            $generatedSignature = hash_hmac('sha256', $razorpayOrderId . "|" . $razorpayPaymentId, $razorpayKeySecret);
+            
+            if ($generatedSignature !== $razorpaySignature) {
+                throw new Exception("Payment signature verification failed.");
+            }
+        }
         
         $this->checkoutRepo->updatePaymentStatus((int)$orderId, $status, [
             'razorpay_payment_id' => $razorpayPaymentId,
-            'razorpay_signature' => $data['razorpay_signature'] ?? 'mock_signature'
+            'razorpay_signature' => $razorpaySignature
         ]);
 
         if ($status === 'captured') {

@@ -143,4 +143,38 @@ class AuthController {
             Response::error($e->getMessage(), 400);
         }
     }
+
+    public function changePassword(): void {
+        try {
+            $authUser = AuthMiddleware::authenticate();
+            if (!$authUser) return;
+
+            $data = Request::getJson();
+            $this->authService->changePassword(
+                $authUser['id'],
+                $data['current_password'] ?? '',
+                $data['new_password'] ?? '',
+                $data['confirm_password'] ?? ''
+            );
+            Response::success("Password has been changed successfully.");
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function deleteAccount(): void {
+        try {
+            $authUser = AuthMiddleware::authenticate();
+            if (!$authUser) return;
+
+            $data = Request::getJson();
+            $this->authService->deleteAccount(
+                $authUser['id'],
+                $data['password'] ?? ''
+            );
+            Response::success("Account has been deleted successfully.");
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
 }
