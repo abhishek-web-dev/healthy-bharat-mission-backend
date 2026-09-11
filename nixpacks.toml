@@ -1,0 +1,3 @@
+[providers.php]
+# Tell Nixpacks to set the Document Root to the 'public' folder where index.php lives
+root = "public"

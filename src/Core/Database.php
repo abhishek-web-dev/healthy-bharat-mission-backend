@@ -12,11 +12,12 @@ class Database {
 
     public static function getConnection(): PDO {
         if (self::$instance === null) {
-            $host = Env::get('DB_HOST', '127.0.0.1');
-            $port = Env::get('DB_PORT', '3306');
-            $db   = Env::get('DB_DATABASE', 'healthy_bharat_mission');
-            $user = Env::get('DB_USERNAME', 'root');
-            $pass = Env::get('DB_PASSWORD', '');
+            // Use Railway's native injected variables if they exist, otherwise fallback to local .env
+            $host = Env::get('MYSQLHOST', Env::get('DB_HOST', '127.0.0.1'));
+            $port = Env::get('MYSQLPORT', Env::get('DB_PORT', '3306'));
+            $db   = Env::get('MYSQLDATABASE', Env::get('DB_DATABASE', 'healthy_bharat_mission'));
+            $user = Env::get('MYSQLUSER', Env::get('DB_USERNAME', 'root'));
+            $pass = Env::get('MYSQLPASSWORD', Env::get('DB_PASSWORD', ''));
             $charset = 'utf8mb4';
 
             $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
