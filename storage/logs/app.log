@@ -162,3 +162,4 @@
 [2026-09-11 19:12:59] WARNING: Failed login attempt - wrong password {"user_id":2}
 [2026-09-11 19:20:58] ERROR: Uncaught Exception: HBM\Helpers\Response::success(): Argument #2 ($data) must be of type array, null given, called in /media/abhishekn/New Volume/BKM/Healthy_Mission_Bharat/backend/src/Controllers/FoodChartController.php on line 22 {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Helpers\/Response.php","line":13}
 [2026-09-11 20:03:33] WARNING: Failed login attempt - user not found {"identifier":"abhishek@example.com"}
+[2026-09-11 23:51:41] INFO: User logged in {"user_id":2}
