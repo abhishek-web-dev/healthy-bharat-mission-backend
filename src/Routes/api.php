@@ -14,6 +14,7 @@ $router->get('/api/health', [HealthController::class, 'check']);
 $router->post('/api/auth/register', [AuthController::class, 'register']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
 $router->post('/api/auth/verify-otp', [AuthController::class, 'verifyOtp']);
+$router->post('/api/auth/resend-otp', [AuthController::class, 'resendOtp']);
 $router->post('/api/auth/forgot-password', [AuthController::class, 'forgotPassword']);
 $router->post('/api/auth/reset-password', [AuthController::class, 'resetPassword']);
 
@@ -174,6 +175,10 @@ $router->get('/api/orders', function() use ($router) {
 $router->get('/api/orders/{id}', function($id) use ($router) {
     AuthMiddleware::handle();
     (new CheckoutController())->getOrderDetails($id);
+});
+$router->get('/api/orders/{id}/invoice/download', function($id) use ($router) {
+    AuthMiddleware::handle();
+    (new CheckoutController())->downloadInvoice($id);
 });
 $router->post('/api/payments/verify', function() use ($router) {
     AuthMiddleware::handle();

@@ -163,3 +163,17 @@
 [2026-09-11 19:20:58] ERROR: Uncaught Exception: HBM\Helpers\Response::success(): Argument #2 ($data) must be of type array, null given, called in /media/abhishekn/New Volume/BKM/Healthy_Mission_Bharat/backend/src/Controllers/FoodChartController.php on line 22 {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Helpers\/Response.php","line":13}
 [2026-09-11 20:03:33] WARNING: Failed login attempt - user not found {"identifier":"abhishek@example.com"}
 [2026-09-11 23:51:41] INFO: User logged in {"user_id":2}
+[2026-09-12 11:24:44] WARNING: Failed login attempt - wrong password {"user_id":2}
+[2026-09-12 11:24:54] INFO: User logged in {"user_id":2}
+[2026-09-12 18:42:28] INFO: Password reset token generated {"email":"web.abhi.dev@gmail.com","token_mock":"8cfe4d350e8156fe224cf29879e2e3cb11fd36ccbba4b5a6cc45eb58d22f151c"}
+[2026-09-12 18:42:29] INFO: EmailService: Email sent successfully to web.abhi.dev@gmail.com 
+[2026-09-12 18:44:43] INFO: OTP Generated {"identifier":"abhijob30@gmail.com","type":"registration","otp_mock":"942582"}
+[2026-09-12 18:44:43] INFO: EmailService: Email sent successfully to abhijob30@gmail.com 
+[2026-09-12 18:44:43] INFO: New user registered {"user_id":3,"email":"abhijob30@gmail.com"}
+[2026-09-12 18:53:27] INFO: OTP Generated {"identifier":"abhijob30@gmail.com","type":"registration","otp_mock":"859869"}
+[2026-09-12 18:53:27] INFO: EmailService: Email sent successfully to abhijob30@gmail.com 
+[2026-09-12 18:54:22] WARNING: Failed login attempt - wrong password {"user_id":2}
+[2026-09-12 18:54:30] INFO: User logged in {"user_id":2}
+[2026-09-12 19:30:34] ERROR: Uncaught Exception: Call to private method HBM\Repositories\CheckoutRepository::getDb() from scope HBM\Controllers\CheckoutController {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/CheckoutController.php","line":115}
+[2026-09-12 19:30:38] ERROR: Uncaught Exception: Call to private method HBM\Repositories\CheckoutRepository::getDb() from scope HBM\Controllers\CheckoutController {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/CheckoutController.php","line":115}
+[2026-09-12 19:30:49] ERROR: Uncaught Exception: Call to private method HBM\Repositories\CheckoutRepository::getDb() from scope HBM\Controllers\CheckoutController {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/CheckoutController.php","line":115}

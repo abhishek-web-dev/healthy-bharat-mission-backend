@@ -8,6 +8,11 @@
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
+// Load Composer Autoloader
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require __DIR__ . '/../vendor/autoload.php';
+}
+
 // Allow direct PHP file access (e.g. migrate.php) when using built-in server router
 if (php_sapi_name() === 'cli-server') {
     $file = __DIR__ . $_SERVER['REQUEST_URI'];

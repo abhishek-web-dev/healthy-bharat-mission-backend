@@ -4,15 +4,22 @@ namespace HBM\Services;
 
 use HBM\Repositories\CheckoutRepository;
 use HBM\Repositories\StoreRepository;
+use HBM\Services\InvoiceService;
+use HBM\Services\EmailService;
+use HBM\Services\EmailTemplateService;
 use Exception;
 
 class CheckoutService {
     private CheckoutRepository $checkoutRepo;
     private StoreRepository $storeRepo;
+    private InvoiceService $invoiceService;
+    private EmailService $emailService;
 
     public function __construct() {
         $this->checkoutRepo = new CheckoutRepository();
         $this->storeRepo = new StoreRepository();
+        $this->invoiceService = new InvoiceService();
+        $this->emailService = new EmailService();
     }
 
     public function getUserAddresses(int $userId): array {
@@ -177,6 +184,10 @@ class CheckoutService {
 
             $this->checkoutRepo->commit();
 
+            if ($paymentMethod === 'cod') {
+                $this->processOrderSuccess($userId, $orderId);
+            }
+
             return [
                 'order_id' => $orderId,
                 'order_number' => $orderNumber,
@@ -232,6 +243,7 @@ class CheckoutService {
 
         if ($status === 'captured') {
             $this->checkoutRepo->updateOrderStatus((int)$orderId, 'processing');
+            $this->processOrderSuccess($userId, (int)$orderId);
         }
 
         return ['status' => 'success', 'order_id' => $orderId];
@@ -247,5 +259,49 @@ class CheckoutService {
             throw new Exception("Order not found.");
         }
         return $order;
+    }
+
+    private function processOrderSuccess(int $userId, int $orderId): void {
+        try {
+            $order = $this->checkoutRepo->getOrderDetails($orderId, $userId);
+            if (!$order) return;
+
+            $items = $order['items'] ?? [];
+            
+            // Generate Invoice PDF
+            $invoiceData = $this->invoiceService->generateInvoicePdf($order, $items);
+            
+            // Save to user_documents
+            $stmt = $this->checkoutRepo->getDb()->prepare("
+                INSERT INTO user_documents (user_id, title, document_type, file_path)
+                VALUES (:user_id, :title, 'invoice', :file_path)
+            ");
+            $stmt->execute([
+                'user_id' => $userId,
+                'title' => 'Invoice ' . $order['order_number'],
+                'file_path' => '/storage/invoices/' . $invoiceData['file_name']
+            ]);
+
+            // Email it
+            $toEmail = $order['shipping_email'] ?? null;
+            if ($toEmail && filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+                $htmlBody = EmailTemplateService::getOrderConfirmationEmail($order);
+                $this->emailService->sendEmail(
+                    $toEmail, 
+                    "Order Confirmation - " . $order['order_number'], 
+                    $htmlBody, 
+                    $order['shipping_first_name'] ?? '',
+                    [
+                        [
+                            'name' => $invoiceData['file_name'],
+                            'content' => $invoiceData['content'],
+                            'mime_type' => 'application/pdf'
+                        ]
+                    ]
+                );
+            }
+        } catch (Exception $e) {
+            \HBM\Helpers\Logger::error("Failed to process order success for Order ID: " . $orderId, ['error' => $e->getMessage()]);
+        }
     }
 }

@@ -118,6 +118,23 @@ class AuthController {
         }
     }
 
+    public function resendOtp(): void {
+        try {
+            $data = Request::getJson();
+            $identifier = $data['identifier'] ?? '';
+            $type = $data['purpose'] ?? 'registration';
+            
+            if (empty($identifier)) {
+                throw new Exception("Identifier is required.");
+            }
+
+            $this->authService->generateOtp($identifier, $type);
+            Response::success("OTP resent successfully.");
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
     public function forgotPassword(): void {
         try {
             $data = Request::getJson();

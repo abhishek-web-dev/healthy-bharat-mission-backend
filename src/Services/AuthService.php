@@ -114,7 +114,7 @@ class AuthService {
         // Send OTP via Email using ZeptoMail
         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             $subject = "Your Healthy Bharat Mission OTP";
-            $message = "<div>Hello, <br><br>Your OTP for $type is: <b>$code</b>.<br>This OTP is valid for 10 minutes.<br><br>Thank you,<br>Healthy Bharat Mission Team</div>";
+            $message = EmailTemplateService::getOtpEmail($type, $code);
             try {
                 $this->emailService->sendEmail($identifier, $subject, $message);
             } catch (Exception $e) {
@@ -180,7 +180,7 @@ class AuthService {
                 $baseUrl = $_ENV['FRONTEND_URL'] ?? $_ENV['APP_URL'];
                 $resetLink = $baseUrl . "/auth/reset-password.html?token=" . $token;
                 $subject = "Reset your Healthy Bharat Mission password";
-                $message = "<div>Hello,<br><br>You requested to reset your password. Click the link below to set a new password:<br><br><a href='$resetLink'>$resetLink</a><br><br>This link is valid for 1 hour.<br><br>Thank you,<br>Healthy Bharat Mission Team</div>";
+                $message = EmailTemplateService::getPasswordResetEmail($resetLink);
                 try {
                     $this->emailService->sendEmail($user['email'], $subject, $message);
                 } catch (Exception $e) {

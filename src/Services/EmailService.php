@@ -25,10 +25,11 @@ class EmailService {
      * @param string $subject
      * @param string $htmlBody
      * @param string $toName
+     * @param array $attachments Array of attachments [['content' => base64, 'mime_type' => '...', 'name' => '...']]
      * @return bool
      * @throws Exception
      */
-    public function sendEmail(string $toEmail, string $subject, string $htmlBody, string $toName = ""): bool {
+    public function sendEmail(string $toEmail, string $subject, string $htmlBody, string $toName = "", array $attachments = []): bool {
         if (empty($this->apiKey)) {
             Logger::error("EmailService: Missing ZeptoMail API Key in .env");
             return false;
@@ -50,6 +51,10 @@ class EmailService {
             "subject" => $subject,
             "htmlbody" => $htmlBody
         ];
+
+        if (!empty($attachments)) {
+            $payload['attachments'] = $attachments;
+        }
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
