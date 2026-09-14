@@ -120,6 +120,13 @@ class UserController {
                 throw new Exception("Unsupported file type.");
             }
 
+            // Validate extension for security
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+            if (!in_array($ext, $allowedExtensions)) {
+                throw new Exception("Unsupported file extension.");
+            }
+
             // Create uploads directory if not exists
             $uploadDir = __DIR__ . '/../../public/uploads/documents/';
             if (!is_dir($uploadDir)) {
@@ -127,7 +134,6 @@ class UserController {
             }
 
             // Generate unique filename
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
             $filename = uniqid('doc_') . '.' . $ext;
             $destPath = $uploadDir . $filename;
 

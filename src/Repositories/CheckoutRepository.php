@@ -7,7 +7,7 @@ use PDO;
 use Exception;
 
 class CheckoutRepository {
-    private function getDb(): PDO {
+    public function getDb(): PDO {
         return Database::getConnection();
     }
 

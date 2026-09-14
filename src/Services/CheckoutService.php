@@ -150,7 +150,7 @@ class CheckoutService {
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
                 curl_setopt($ch, CURLOPT_POST, 1);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                    'amount' => $totalAmount * 100, // Amount in paise
+                    'amount' => (int) round($totalAmount * 100), // Amount in paise
                     'currency' => 'INR',
                     'receipt' => $orderNumber
                 ]));
@@ -232,6 +232,7 @@ class CheckoutService {
             $generatedSignature = hash_hmac('sha256', $razorpayOrderId . "|" . $razorpayPaymentId, $razorpayKeySecret);
             
             if ($generatedSignature !== $razorpaySignature) {
+                \HBM\Helpers\Logger::error("Razorpay Signature mismatch! Expected: $generatedSignature, Got: $razorpaySignature");
                 throw new Exception("Payment signature verification failed.");
             }
         }
@@ -300,7 +301,7 @@ class CheckoutService {
                     ]
                 );
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             \HBM\Helpers\Logger::error("Failed to process order success for Order ID: " . $orderId, ['error' => $e->getMessage()]);
         }
     }

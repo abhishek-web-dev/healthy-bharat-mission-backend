@@ -30,10 +30,10 @@ class Database {
                 $pass = Env::get('MYSQLPASSWORD', Env::get('DB_PASSWORD', ''));
             }
             
-            // Force TCP connection by translating 'localhost' to '127.0.0.1'
-            if ($host === 'localhost') {
-                $host = '127.0.0.1';
-            }
+            // Allow native localhost for Unix socket (Hostinger requirement)
+            // if ($host === 'localhost') {
+            //     $host = '127.0.0.1';
+            // }
 
             $charset = 'utf8mb4';
 
