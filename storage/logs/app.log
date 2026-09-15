@@ -240,3 +240,108 @@
 [2026-09-14 07:11:04] ERROR: Uncaught Exception: Call to private method HBM\Repositories\CheckoutRepository::getDb() from scope HBM\Services\CheckoutService {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Services\/CheckoutService.php","line":275}
 [2026-09-14 07:20:05] ERROR: Uncaught Exception: Call to private method HBM\Repositories\CheckoutRepository::getDb() from scope HBM\Services\CheckoutService {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Services\/CheckoutService.php","line":276}
 [2026-09-14 07:21:16] ERROR: Uncaught Exception: Call to private method HBM\Repositories\CheckoutRepository::getDb() from scope HBM\Services\CheckoutService {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Services\/CheckoutService.php","line":276}
+[2026-09-14 15:15:39] WARNING: Failed login attempt - user not found {"identifier":"superadmin@healthybharatmission.com"}
+[2026-09-14 15:15:39] WARNING: Failed login attempt - wrong password {"user_id":4}
+[2026-09-14 15:32:52] WARNING: Failed login attempt - user not found {"identifier":"superadmin@healthybharatmission.com"}
+[2026-09-14 15:32:52] WARNING: Failed login attempt - wrong password {"user_id":4}
+[2026-09-14 15:49:02] INFO: User logged in {"user_id":5}
+[2026-09-14 15:49:03] INFO: User logged in {"user_id":6}
+[2026-09-14 15:49:03] INFO: User logged in {"user_id":7}
+[2026-09-14 15:49:03] INFO: User logged in {"user_id":4}
+[2026-09-14 16:41:37] INFO: User logged in {"user_id":5}
+[2026-09-14 16:41:37] INFO: User logged in {"user_id":6}
+[2026-09-14 16:41:37] INFO: User logged in {"user_id":4}
+[2026-09-14 17:49:33] INFO: User logged in {"user_id":5}
+[2026-09-14 17:49:34] INFO: User logged in {"user_id":6}
+[2026-09-14 17:49:34] INFO: User logged in {"user_id":4}
+[2026-09-14 18:04:02] INFO: User logged in {"user_id":6}
+[2026-09-14 18:18:00] INFO: User logged in {"user_id":6}
+[2026-09-14 18:19:41] INFO: User logged in {"user_id":5}
+[2026-09-14 18:19:41] INFO: User logged in {"user_id":6}
+[2026-09-14 18:19:41] INFO: User logged in {"user_id":4}
+[2026-09-14 18:52:56] INFO: User logged in {"user_id":6}
+[2026-09-14 19:00:28] INFO: User logged in {"user_id":5}
+[2026-09-14 19:00:28] INFO: User logged in {"user_id":6}
+[2026-09-14 19:00:28] INFO: User logged in {"user_id":4}
+[2026-09-14 19:30:52] INFO: User logged in {"user_id":6}
+[2026-09-14 19:48:16] INFO: User logged in {"user_id":5}
+[2026-09-14 19:48:16] INFO: User logged in {"user_id":6}
+[2026-09-14 19:48:16] INFO: User logged in {"user_id":4}
+[2026-09-14 21:50:42] INFO: User logged in {"user_id":6}
+[2026-09-15 05:13:41] INFO: User logged in {"user_id":6}
+[2026-09-15 05:13:42] INFO: User logged in {"user_id":4}
+[2026-09-15 05:13:42] ERROR: Uncaught Exception: Call to undefined method HBM\Controllers\AdminContentController::getPageParams() {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/AdminContentController.php","line":106}
+[2026-09-15 05:14:05] INFO: User logged in {"user_id":6}
+[2026-09-15 05:14:05] ERROR: Uncaught Exception: Call to undefined method HBM\Controllers\AdminContentController::getPageParams() {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/AdminContentController.php","line":106}
+[2026-09-15 05:15:56] INFO: User logged in {"user_id":6}
+[2026-09-15 05:15:56] ERROR: Uncaught Exception: Call to undefined method HBM\Controllers\AdminContentController::getPageParams() {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/AdminContentController.php","line":106}
+[2026-09-15 05:16:37] INFO: User logged in {"user_id":6}
+[2026-09-15 05:16:37] INFO: User logged in {"user_id":4}
+[2026-09-15 05:19:34] INFO: User logged in {"user_id":6}
+[2026-09-15 05:19:34] INFO: User logged in {"user_id":4}
+[2026-09-15 05:23:07] INFO: User logged in {"user_id":6}
+[2026-09-15 05:23:07] INFO: User logged in {"user_id":4}
+[2026-09-15 05:58:15] INFO: User logged in {"user_id":6}
+[2026-09-15 05:58:15] INFO: User logged in {"user_id":4}
+[2026-09-15 05:58:15] ERROR: Uncaught Exception: Class "HBM\Controllers\BaseController" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/AdminAppointmentController.php","line":7}
+[2026-09-15 05:58:15] ERROR: Uncaught Exception: Class "HBM\Controllers\BaseController" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/AdminAppointmentController.php","line":7}
+[2026-09-15 05:58:27] INFO: User logged in {"user_id":6}
+[2026-09-15 05:58:27] ERROR: Uncaught Exception: Class "HBM\Controllers\BaseController" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Controllers\/AdminAppointmentController.php","line":7}
+[2026-09-15 05:59:36] INFO: User logged in {"user_id":6}
+[2026-09-15 05:59:36] INFO: User logged in {"user_id":4}
+[2026-09-15 05:59:36] ERROR: Uncaught Exception: Class "HBM\Helpers\Database" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Repositories\/AdminAppointmentRepository.php","line":8}
+[2026-09-15 05:59:36] ERROR: Uncaught Exception: Class "HBM\Helpers\Database" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Repositories\/AdminAppointmentRepository.php","line":8}
+[2026-09-15 05:59:50] INFO: User logged in {"user_id":6}
+[2026-09-15 05:59:50] ERROR: Uncaught Exception: Class "HBM\Helpers\Database" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Repositories\/AdminAppointmentRepository.php","line":8}
+[2026-09-15 06:00:32] INFO: User logged in {"user_id":6}
+[2026-09-15 06:00:32] INFO: User logged in {"user_id":4}
+[2026-09-15 06:05:14] INFO: User logged in {"user_id":6}
+[2026-09-15 06:05:15] INFO: User logged in {"user_id":4}
+[2026-09-15 06:05:56] INFO: User logged in {"user_id":6}
+[2026-09-15 06:05:56] INFO: User logged in {"user_id":4}
+[2026-09-15 06:17:11] INFO: User logged in {"user_id":6}
+[2026-09-15 06:17:11] INFO: User logged in {"user_id":4}
+[2026-09-15 06:18:07] INFO: User logged in {"user_id":6}
+[2026-09-15 06:18:31] INFO: User logged in {"user_id":5}
+[2026-09-15 06:21:35] INFO: User logged in {"user_id":6}
+[2026-09-15 06:21:50] INFO: User logged in {"user_id":6}
+[2026-09-15 06:21:55] INFO: User logged in {"user_id":6}
+[2026-09-15 06:22:35] INFO: User logged in {"user_id":6}
+[2026-09-15 06:23:17] INFO: User logged in {"user_id":6}
+[2026-09-15 06:23:47] INFO: User logged in {"user_id":6}
+[2026-09-15 06:25:10] INFO: User logged in {"user_id":6}
+[2026-09-15 06:25:13] INFO: User logged in {"user_id":6}
+[2026-09-15 06:25:51] INFO: User logged in {"user_id":6}
+[2026-09-15 06:26:12] INFO: User logged in {"user_id":6}
+[2026-09-15 06:26:14] INFO: User logged in {"user_id":6}
+[2026-09-15 06:26:15] INFO: User logged in {"user_id":6}
+[2026-09-15 06:26:16] INFO: User logged in {"user_id":6}
+[2026-09-15 06:26:17] INFO: User logged in {"user_id":6}
+[2026-09-15 06:26:18] INFO: User logged in {"user_id":6}
+[2026-09-15 06:27:28] INFO: User logged in {"user_id":6}
+[2026-09-15 06:27:29] INFO: User logged in {"user_id":6}
+[2026-09-15 06:27:30] INFO: User logged in {"user_id":6}
+[2026-09-15 06:28:48] INFO: User logged in {"user_id":6}
+[2026-09-15 06:28:56] INFO: User logged in {"user_id":6}
+[2026-09-15 06:28:58] INFO: User logged in {"user_id":6}
+[2026-09-15 06:28:59] INFO: User logged in {"user_id":6}
+[2026-09-15 06:29:00] INFO: User logged in {"user_id":6}
+[2026-09-15 06:29:15] INFO: User logged in {"user_id":6}
+[2026-09-15 06:29:25] INFO: User logged in {"user_id":6}
+[2026-09-15 06:29:26] INFO: User logged in {"user_id":6}
+[2026-09-15 06:29:27] INFO: User logged in {"user_id":6}
+[2026-09-15 06:29:54] INFO: User logged in {"user_id":6}
+[2026-09-15 06:33:06] INFO: User logged in {"user_id":6}
+[2026-09-15 06:37:56] INFO: User logged in {"user_id":6}
+[2026-09-15 06:37:59] INFO: User logged in {"user_id":6}
+[2026-09-15 12:33:39] INFO: New user registered (auto-activated, no email service) {"user_id":8,"email":"testuser_phase3@example.com"}
+[2026-09-15 12:33:39] INFO: User logged in {"user_id":8}
+[2026-09-15 12:34:29] WARNING: Failed login attempt - wrong password {"user_id":6}
+[2026-09-15 12:34:30] WARNING: Failed login attempt - wrong password {"user_id":5}
+[2026-09-15 12:34:38] INFO: User logged in {"user_id":5}
+[2026-09-15 12:35:17] INFO: User logged in {"user_id":5}
+[2026-09-15 12:37:56] INFO: User logged in {"user_id":5}
+[2026-09-15 12:54:25] INFO: Webhook order not found locally for Razorpay Order: order_invalid 
+[2026-09-15 12:54:48] WARNING: Failed login attempt - wrong password {"user_id":4}
+[2026-09-15 12:55:05] INFO: User logged in {"user_id":4}
+[2026-09-15 12:59:02] INFO: User logged in {"user_id":6}

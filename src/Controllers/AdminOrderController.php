@@ -42,6 +42,7 @@ class AdminOrderController {
                 throw new Exception("Status is required");
             }
             $this->service->updateOrderStatus($authUser['id'], $id, $input['status']);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'], 'ORDER_STATUS_UPDATED', 'orders', $id, ['status' => $input['status']]);
             Response::success('Order status updated successfully');
         } catch (Exception $e) {
             Response::error($e->getMessage(), 400);
@@ -57,6 +58,7 @@ class AdminOrderController {
                 throw new Exception("Status is required");
             }
             $this->service->updatePaymentStatus($authUser['id'], $id, $input['status']);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'], 'PAYMENT_STATUS_UPDATED', 'orders', $id, ['status' => $input['status']]);
             Response::success('Payment status updated successfully');
         } catch (Exception $e) {
             Response::error($e->getMessage(), 400);

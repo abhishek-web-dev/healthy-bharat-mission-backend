@@ -157,4 +157,22 @@ class CheckoutController {
             Response::error($e->getMessage(), 400);
         }
     }
+
+    public function handleWebhook(): void {
+        $payload = file_get_contents('php://input');
+        $signature = $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'] ?? '';
+
+        try {
+            if (empty($signature)) {
+                throw new Exception("Missing webhook signature.");
+            }
+            $result = $this->checkoutService->processWebhook($payload, $signature);
+            Response::success('Webhook processed successfully.', $result);
+        } catch (Exception $e) {
+            // Send HTTP 400 to Razorpay so it knows the webhook failed or is invalid
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            exit;
+        }
+    }
 }

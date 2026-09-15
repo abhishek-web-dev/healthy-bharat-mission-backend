@@ -36,6 +36,15 @@ class ContentService {
         return $program;
     }
 
+    
+    public function createProgram(array $data): int {
+        return $this->repo->createProgram($data);
+    }
+
+    public function updateProgram(int $id, array $data): void {
+        $this->repo->updateProgram($id, $data);
+    }
+
     public function getArticles(array $filters = [], int $page = 1, int $perPage = 12): array {
         return $this->repo->getArticles($filters, $page, $perPage);
     }
@@ -48,12 +57,67 @@ class ContentService {
         return $article;
     }
 
+    
+    public function getArticleById(int $id): array {
+        $article = $this->repo->getArticleById($id);
+        if (!$article) throw new Exception("Article not found", 404);
+        return $article;
+    }
+
+    public function createArticle(array $data, int $authorId): int {
+        return $this->repo->createArticle($data, $authorId);
+    }
+
+    public function updateArticle(int $id, array $data): void {
+        $this->repo->updateArticle($id, $data);
+    }
+
     public function getArticleCategories(): array {
         return $this->repo->getArticleCategories();
     }
 
     public function getArticleTags(): array {
         return $this->repo->getArticleTags();
+    }
+
+    
+    public function getAdminHealthConditions(int $page = 1, int $perPage = 50): array {
+        return $this->repo->getAdminHealthConditions($page, $perPage);
+    }
+
+    public function createHealthCondition(array $data): int {
+        return $this->repo->createHealthCondition($data);
+    }
+
+    public function updateHealthCondition(int $id, array $data): void {
+        $this->repo->updateHealthCondition($id, $data);
+    }
+
+    
+    
+    public function getAdminInquiries(int $page = 1, int $perPage = 50): array {
+        return $this->repo->getAdminInquiries($page, $perPage);
+    }
+    public function updateInquiryStatus(int $id, string $status): void {
+        $this->repo->updateInquiryStatus($id, $status);
+    }
+    public function getAdminSubscribers(int $page = 1, int $perPage = 50): array {
+        return $this->repo->getAdminSubscribers($page, $perPage);
+    }
+    public function updateSubscriberStatus(int $id, int $is_active): void {
+        $this->repo->updateSubscriberStatus($id, $is_active);
+    }
+
+    public function getAdminFaqs(int $page = 1, int $perPage = 50): array {
+        return $this->repo->getAdminFaqs($page, $perPage);
+    }
+
+    public function createFaq(array $data): int {
+        return $this->repo->createFaq($data);
+    }
+
+    public function updateFaq(int $id, array $data): void {
+        $this->repo->updateFaq($id, $data);
     }
 
     public function getFaqs(bool $public = true): array {

@@ -42,15 +42,27 @@ class AdminContentController {
     // =========================================================
     
     public function createProgram(): void {
-        $data = Request::getJson();
-        // TODO: Validate & Insert via Repository
-        Response::success("Admin: Program created stub", [], 201);
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $id = $this->service->createProgram($data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'PROGRAM_CREATED', 'programs', $id);
+            Response::success("Program created successfully", ["id" => $id], 201);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
     }
 
     public function updateProgram(string $id): void {
-        $data = Request::getJson();
-        // TODO: Validate & Update via Repository
-        Response::success("Admin: Program updated stub", []);
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $this->service->updateProgram((int)$id, $data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'PROGRAM_UPDATED', 'programs', (int)$id);
+            Response::success("Program updated successfully");
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
     }
 
     public function deleteProgram(string $id): void {
@@ -59,16 +71,114 @@ class AdminContentController {
     }
 
     public function createArticle(): void {
-        $data = Request::getJson();
-        global $authUser;
-        $data['author_id'] = $authUser['id'];
-        // TODO: Validate & Insert via Repository
-        Response::success("Admin: Article created stub", [], 201);
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $id = $this->service->createArticle($data, (int)$authUser["id"]);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'ARTICLE_CREATED', 'articles', $id);
+            Response::success("Article created successfully", ["id" => $id], 201);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
     }
 
     // ... Other CRUD methods for FAQs, Success Stories, Health Conditions
     
     // View inquiries / subscribers
+    
+    public function getArticle(string $id): void {
+        try {
+            $article = $this->service->getArticleById((int)$id);
+            Response::success("Article retrieved", $article);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 404);
+        }
+    }
+
+    public function updateArticle(string $id): void {
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $this->service->updateArticle((int)$id, $data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'ARTICLE_UPDATED', 'articles', (int)$id);
+            Response::success("Article updated successfully");
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    
+    public function listHealthConditions(): void {
+        try {
+            $page = (int)($_GET['page'] ?? 1);
+            $perPage = (int)($_GET['per_page'] ?? 50);
+            $result = $this->service->getAdminHealthConditions($page, $perPage);
+            Response::success("Health conditions retrieved", $result);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function createHealthCondition(): void {
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $id = $this->service->createHealthCondition($data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'HEALTH_CONDITION_CREATED', 'health_conditions', $id);
+            Response::success("Health condition created", ["id" => $id], 201);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function updateHealthCondition(string $id): void {
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $this->service->updateHealthCondition((int)$id, $data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'HEALTH_CONDITION_UPDATED', 'health_conditions', (int)$id);
+            Response::success("Health condition updated");
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    
+    public function listFaqs(): void {
+        try {
+            $page = (int)($_GET['page'] ?? 1);
+            $perPage = (int)($_GET['per_page'] ?? 50);
+            $result = $this->service->getAdminFaqs($page, $perPage);
+            Response::success("FAQs retrieved", $result);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function createFaq(): void {
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $id = $this->service->createFaq($data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'FAQ_CREATED', 'faqs', $id);
+            Response::success("FAQ created", ["id" => $id], 201);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function updateFaq(string $id): void {
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $this->service->updateFaq((int)$id, $data);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'FAQ_UPDATED', 'faqs', (int)$id);
+            Response::success("FAQ updated");
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
     public function listInquiries(): void {
         // TODO: Fetch from Repository
         Response::success("Admin: Contact Inquiries retrieved", []);

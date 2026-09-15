@@ -142,8 +142,11 @@ class CheckoutService {
             // Create Payment Record
             $razorpayOrderId = null;
             if ($paymentMethod !== 'cod') {
-                $razorpayKeyId = 'rzp_test_Smv6k8a60175SA';
-                $razorpayKeySecret = 'sLn07yqcnOszdIXXa25HZ3oI';
+                $razorpayKeyId = \HBM\Helpers\Env::get('RAZORPAY_KEY_ID');
+                $razorpayKeySecret = \HBM\Helpers\Env::get('RAZORPAY_KEY_SECRET');
+                if (!$razorpayKeyId || !$razorpayKeySecret) {
+                    throw new Exception("Payment gateway is not configured properly.");
+                }
                 
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, 'https://api.razorpay.com/v1/orders');
@@ -193,7 +196,8 @@ class CheckoutService {
                 'order_number' => $orderNumber,
                 'total_amount' => $totalAmount,
                 'payment_method' => $paymentMethod,
-                'razorpay_order_id' => $razorpayOrderId
+                'razorpay_order_id' => $razorpayOrderId,
+                'razorpay_key_id' => \HBM\Helpers\Env::get('RAZORPAY_KEY_ID')
             ];
 
         } catch (Exception $e) {
@@ -228,7 +232,10 @@ class CheckoutService {
                 throw new Exception("Missing Razorpay payment details.");
             }
             
-            $razorpayKeySecret = 'sLn07yqcnOszdIXXa25HZ3oI';
+            $razorpayKeySecret = \HBM\Helpers\Env::get('RAZORPAY_KEY_SECRET');
+            if (!$razorpayKeySecret) {
+                throw new Exception("Payment gateway configuration error.");
+            }
             $generatedSignature = hash_hmac('sha256', $razorpayOrderId . "|" . $razorpayPaymentId, $razorpayKeySecret);
             
             if ($generatedSignature !== $razorpaySignature) {
@@ -304,5 +311,72 @@ class CheckoutService {
         } catch (\Throwable $e) {
             \HBM\Helpers\Logger::error("Failed to process order success for Order ID: " . $orderId, ['error' => $e->getMessage()]);
         }
+    }
+    public function processWebhook(string $payload, string $signature): array {
+        $webhookSecret = \HBM\Helpers\Env::get('RAZORPAY_WEBHOOK_SECRET');
+        if (!$webhookSecret) {
+            throw new Exception("Webhook secret is not configured.");
+        }
+
+        $expectedSignature = hash_hmac('sha256', $payload, $webhookSecret);
+        if (!hash_equals($expectedSignature, $signature)) {
+            \HBM\Helpers\Logger::error("Webhook signature mismatch.");
+            throw new Exception("Invalid webhook signature.");
+        }
+
+        $data = json_decode($payload, true);
+        if (!$data || !isset($data['event'])) {
+            throw new Exception("Invalid webhook payload.");
+        }
+
+        $event = $data['event'];
+        $paymentData = $data['payload']['payment']['entity'] ?? null;
+        $orderIdRzp = $data['payload']['order']['entity']['id'] ?? ($paymentData['order_id'] ?? null);
+
+        if (!$paymentData || !$orderIdRzp) {
+            throw new Exception("Missing essential payment/order entity in payload.");
+        }
+
+        $db = $this->checkoutRepo->getDb();
+        $stmt = $db->prepare("SELECT id, order_status, payment_status, user_id FROM orders WHERE id = (SELECT order_id FROM payments WHERE razorpay_order_id = :rzp_order_id LIMIT 1)");
+        $stmt->execute(['rzp_order_id' => $orderIdRzp]);
+        $order = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$order) {
+            \HBM\Helpers\Logger::info("Webhook order not found locally for Razorpay Order: " . $orderIdRzp);
+            return ['status' => 'ignored', 'reason' => 'Order not found'];
+        }
+
+        $localOrderId = (int)$order['id'];
+        $userId = (int)$order['user_id'];
+        $razorpayPaymentId = $paymentData['id'];
+
+        if ($order['payment_status'] === 'success' || $order['payment_status'] === 'failed') {
+            return ['status' => 'ignored', 'reason' => 'Order already processed'];
+        }
+
+        if ($event === 'payment.captured' || $event === 'order.paid') {
+            try {
+                $this->checkoutRepo->beginTransaction();
+                $this->checkoutRepo->updatePaymentStatus($localOrderId, 'captured', [
+                    'razorpay_payment_id' => $razorpayPaymentId
+                ]);
+                $this->checkoutRepo->updateOrderStatus($localOrderId, 'processing');
+                $this->checkoutRepo->commit();
+                
+                $this->processOrderSuccess($userId, $localOrderId);
+                return ['status' => 'success', 'message' => 'Payment captured and processed'];
+            } catch (Exception $e) {
+                $this->checkoutRepo->rollBack();
+                throw $e;
+            }
+        } elseif ($event === 'payment.failed') {
+            $this->checkoutRepo->updatePaymentStatus($localOrderId, 'failed', [
+                'razorpay_payment_id' => $razorpayPaymentId
+            ]);
+            return ['status' => 'success', 'message' => 'Payment marked as failed'];
+        }
+
+        return ['status' => 'ignored', 'reason' => 'Unsupported event type'];
     }
 }

@@ -99,6 +99,41 @@ class ContentRepository {
         return $program ?: null;
     }
 
+    
+    public function createProgram(array $data): int {
+        $stmt = $this->db->prepare("
+            INSERT INTO programs (title, slug, description, price, is_free, image_url, is_active)
+            VALUES (:title, :slug, :description, :price, :is_free, :image_url, :is_active)
+        ");
+        $stmt->execute([
+            'title' => $data['title'],
+            'slug' => $data['slug'],
+            'description' => $data['description'] ?? null,
+            'price' => $data['price'] ?? 0,
+            'is_free' => $data['is_free'] ?? 0,
+            'image_url' => $data['image_url'] ?? null,
+            'is_active' => $data['is_active'] ?? 1
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function updateProgram(int $id, array $data): void {
+        $fields = [];
+        $params = ['id' => $id];
+        $allowedFields = ['title', 'slug', 'description', 'price', 'is_free', 'image_url', 'is_active'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                $params[$field] = $data[$field];
+            }
+        }
+        if (empty($fields)) return;
+        $query = "UPDATE programs SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+    }
+
     // =========================================================
     // ARTICLES & LIBRARY
     // =========================================================
@@ -168,8 +203,167 @@ class ContentRepository {
         return $stmt->fetchAll();
     }
 
-    // =========================================================
+    
+    public function getArticleById(int $id): ?array {
+        $stmt = $this->db->prepare("
+            SELECT a.*, 
+                   c.name as category_name, c.slug as category_slug,
+                   u.first_name as author_first_name, u.last_name as author_last_name
+            FROM articles a
+            LEFT JOIN article_categories c ON a.category_id = c.id
+            LEFT JOIN users u ON a.author_id = u.id
+            WHERE a.id = ? AND a.deleted_at IS NULL
+        ");
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function createArticle(array $data, int $authorId): int {
+        $stmt = $this->db->prepare("
+            INSERT INTO articles (title, slug, excerpt, content, category_id, image_url, status, author_id, published_at)
+            VALUES (:title, :slug, :excerpt, :content, :category_id, :image_url, :status, :author_id, :published_at)
+        ");
+        $status = $data['status'] ?? 'draft';
+        $stmt->execute([
+            'title' => $data['title'],
+            'slug' => $data['slug'],
+            'excerpt' => $data['excerpt'] ?? null,
+            'content' => $data['content'],
+            'category_id' => !empty($data['category_id']) ? $data['category_id'] : null,
+            'image_url' => $data['image_url'] ?? null,
+            'status' => $status,
+            'author_id' => $authorId,
+            'published_at' => ($status === 'published') ? date('Y-m-d H:i:s') : null
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function updateArticle(int $id, array $data): void {
+        $fields = [];
+        $params = ['id' => $id];
+        $allowedFields = ['title', 'slug', 'excerpt', 'content', 'category_id', 'image_url', 'status'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                if ($field === 'category_id' && empty($data[$field])) {
+                    $params[$field] = null;
+                } else {
+                    $params[$field] = $data[$field];
+                }
+            }
+        }
+        if (array_key_exists('status', $data) && $data['status'] === 'published') {
+            $fields[] = "published_at = COALESCE(published_at, NOW())";
+        }
+        
+        if (empty($fields)) return;
+        $query = "UPDATE articles SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+    }
+
+    
+    public function getAdminHealthConditions(int $page = 1, int $perPage = 50): array {
+        $query = "SELECT id, name, slug, description, image_url, is_active FROM health_conditions ORDER BY name ASC";
+        return $this->paginate($query, [], $page, $perPage);
+    }
+
+    public function createHealthCondition(array $data): int {
+        $stmt = $this->db->prepare("
+            INSERT INTO health_conditions (name, slug, description, image_url, is_active)
+            VALUES (:name, :slug, :description, :image_url, :is_active)
+        ");
+        $stmt->execute([
+            'name' => $data['name'],
+            'slug' => $data['slug'],
+            'description' => $data['description'] ?? null,
+            'image_url' => $data['image_url'] ?? null,
+            'is_active' => $data['is_active'] ?? 1
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function updateHealthCondition(int $id, array $data): void {
+        $fields = [];
+        $params = ['id' => $id];
+        $allowedFields = ['name', 'slug', 'description', 'image_url', 'is_active'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                $params[$field] = $data[$field];
+            }
+        }
+        
+        if (empty($fields)) return;
+        $query = "UPDATE health_conditions SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+    }
+
+    
+    public function getAdminInquiries(int $page = 1, int $perPage = 50): array {
+        $query = "SELECT id, name, email, phone, subject, message, status, created_at FROM contact_inquiries ORDER BY created_at DESC";
+        return $this->paginate($query, [], $page, $perPage);
+    }
+
+    public function updateInquiryStatus(int $id, string $status): void {
+        $stmt = $this->db->prepare("UPDATE contact_inquiries SET status = :status WHERE id = :id");
+        $stmt->execute(['status' => $status, 'id' => $id]);
+    }
+
+    public function getAdminSubscribers(int $page = 1, int $perPage = 50): array {
+        $query = "SELECT id, email, is_active, created_at FROM newsletter_subscribers ORDER BY created_at DESC";
+        return $this->paginate($query, [], $page, $perPage);
+    }
+
+    public function updateSubscriberStatus(int $id, int $is_active): void {
+        $stmt = $this->db->prepare("UPDATE newsletter_subscribers SET is_active = :is_active WHERE id = :id");
+        $stmt->execute(['is_active' => $is_active, 'id' => $id]);
+    }
+
+// =========================================================
     // FAQS
+
+    public function getAdminFaqs(int $page = 1, int $perPage = 50): array {
+        $query = "SELECT id, question, answer, category, is_active, sort_order FROM faqs ORDER BY sort_order ASC, id DESC";
+        return $this->paginate($query, [], $page, $perPage);
+    }
+
+    public function createFaq(array $data): int {
+        $stmt = $this->db->prepare("
+            INSERT INTO faqs (question, answer, category, is_active, sort_order)
+            VALUES (:question, :answer, :category, :is_active, :sort_order)
+        ");
+        $stmt->execute([
+            'question' => $data['question'],
+            'answer' => $data['answer'],
+            'category' => $data['category'] ?? 'general',
+            'is_active' => $data['is_active'] ?? 1,
+            'sort_order' => $data['sort_order'] ?? 0
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function updateFaq(int $id, array $data): void {
+        $fields = [];
+        $params = ['id' => $id];
+        $allowedFields = ['question', 'answer', 'category', 'is_active', 'sort_order'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                $params[$field] = $data[$field];
+            }
+        }
+        
+        if (empty($fields)) return;
+        $query = "UPDATE faqs SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+    }
+
     // =========================================================
     public function getFaqs(bool $activeOnly = true): array {
         $query = "SELECT * FROM faqs";

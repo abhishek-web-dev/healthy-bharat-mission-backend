@@ -12,6 +12,10 @@ class AdminProductService {
     public function __construct() {
         $this->repo = new AdminProductRepository();
     }
+    public function getAllProducts(int $limit = 100, int $offset = 0): array {
+        return $this->repo->getAllProducts($limit, $offset);
+    }
+
 
     public function createProduct(int $adminId, array $data): int {
         if (empty($data['name']) || empty($data['price']) || empty($data['category_id'])) {

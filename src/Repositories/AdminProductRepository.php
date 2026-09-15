@@ -9,6 +9,20 @@ class AdminProductRepository {
     private function getDb(): PDO {
         return Database::getConnection();
     }
+    public function getAllProducts(int $limit = 100, int $offset = 0): array {
+        $stmt = $this->getDb()->prepare("
+            SELECT p.*, c.name as category_name 
+            FROM products p 
+            LEFT JOIN product_categories c ON p.category_id = c.id 
+            ORDER BY p.id DESC 
+            LIMIT :limit OFFSET :offset
+        ");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 
     public function createProduct(array $data): int {
         $stmt = $this->getDb()->prepare("

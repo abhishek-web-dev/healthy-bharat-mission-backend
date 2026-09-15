@@ -64,7 +64,7 @@ set_exception_handler(function (Throwable $e) {
         'file' => $e->getFile(),
         'line' => $e->getLine()
     ]);
-    Response::error("An unexpected error occurred.", 500);
+    Response::error($e->getMessage(), 500);
 });
 
 // 4. Session Foundation (Secure settings)

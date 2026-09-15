@@ -2,8 +2,8 @@
     RewriteEngine On
 
     # Block access to sensitive files and directories
-    RewriteRule ^(\.env.*|composer\..*|nixpacks\.toml|\.git/.*|src/.*|database/.*|scripts/.*|storage/.*)$ - [F,L,NC]
-    RewriteRule ^(src|database|scripts|storage)$ - [F,L,NC]
+    RewriteRule ^(\.env.*|composer\..*|nixpacks\.toml|\.git/.*|src/.*|database/.*|scripts/.*|storage/.*|vendor/.*)$ - [F,L,NC]
+    RewriteRule ^(src|database|scripts|storage|vendor)$ - [F,L,NC]
 
     # Rewrite all requests to the public directory
     RewriteCond %{REQUEST_URI} !^/public/

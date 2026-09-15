@@ -3,11 +3,11 @@
         'name' => 'healthy-bharat-mission/backend',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '7d453d810b9d4ee7053b29f32ae0297a1cf0c215',
+        'reference' => '23145379b51ccf08e3dfb09124432810ed51d6da',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'dompdf/dompdf' => array(
@@ -40,7 +40,7 @@
         'healthy-bharat-mission/backend' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '7d453d810b9d4ee7053b29f32ae0297a1cf0c215',
+            'reference' => '23145379b51ccf08e3dfb09124432810ed51d6da',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -184,6 +184,8 @@ $router->post('/api/payments/verify', function() use ($router) {
     AuthMiddleware::handle();
     (new CheckoutController())->verifyPayment();
 });
+$router->post('/api/payment/webhook', [CheckoutController::class, 'handleWebhook']);
+
 
 // Admin Dashboard Routes
 use HBM\Controllers\AdminDashboardController;
@@ -213,6 +215,10 @@ $router->put('/api/admin/users/{id}/status', function($id) use ($router) {
 
 // Admin Product Management Routes
 use HBM\Controllers\AdminProductController;
+$router->get('/api/admin/products', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminProductController())->listProducts();
+});
 $router->post('/api/admin/products', function() use ($router) {
     AuthMiddleware::handleAdmin();
     (new AdminProductController())->createProduct();
@@ -269,6 +275,62 @@ $router->post('/api/admin/articles', function() use ($router) {
     (new AdminContentController())->createArticle();
 });
 
+
+$router->get('/api/admin/articles/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->getArticle($id);
+});
+$router->put('/api/admin/articles/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->updateArticle($id);
+});
+
+
+$router->get('/api/admin/health-conditions', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->listHealthConditions();
+});
+$router->post('/api/admin/health-conditions', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->createHealthCondition();
+});
+$router->put('/api/admin/health-conditions/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->updateHealthCondition($id);
+});
+
+
+$router->get('/api/admin/faqs', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->listFaqs();
+});
+$router->post('/api/admin/faqs', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->createFaq();
+});
+$router->put('/api/admin/faqs/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new AdminContentController())->updateFaq($id);
+});
+
+
+$router->get('/api/admin/experts', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new HBM\Controllers\AdminAppointmentController())->listExperts();
+});
+$router->put('/api/admin/experts/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new HBM\Controllers\AdminAppointmentController())->updateExpert($id);
+});
+$router->get('/api/admin/appointments', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new HBM\Controllers\AdminAppointmentController())->listAppointments();
+});
+$router->put('/api/admin/appointments/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new HBM\Controllers\AdminAppointmentController())->updateAppointment($id);
+});
+
 $router->get('/api/admin/contact-inquiries', function() use ($router) {
     AuthMiddleware::handleAdmin();
     (new AdminContentController())->listInquiries();
@@ -276,6 +338,22 @@ $router->get('/api/admin/contact-inquiries', function() use ($router) {
 $router->get('/api/admin/newsletter-subscribers', function() use ($router) {
     AuthMiddleware::handleAdmin();
     (new AdminContentController())->listSubscribers();
+});
+
+// Admin Settings Routes
+$router->get('/api/admin/settings', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new HBM\Controllers\AdminSettingController())->getSettings();
+});
+$router->put('/api/admin/settings', function() use ($router) {
+    AuthMiddleware::handleSuperAdmin(); // Usually Settings should be Super Admin only
+    (new HBM\Controllers\AdminSettingController())->updateSettings();
+});
+
+// Admin Audit Logs Routes
+$router->get('/api/admin/audit-logs', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new HBM\Controllers\AdminAuditLogController())->listLogs();
 });
 
 return $router;

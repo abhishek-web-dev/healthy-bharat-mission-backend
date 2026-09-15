@@ -42,6 +42,7 @@ class AdminUserController {
                 throw new Exception("Role is required");
             }
             $this->service->updateUserRole($authUser['id'], $id, $input['role']);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'], 'USER_ROLE_UPDATED', 'users', $id, ['role' => $input['role']]);
             Response::success('User role updated successfully');
         } catch (Exception $e) {
             Response::error($e->getMessage(), 400);
@@ -57,6 +58,7 @@ class AdminUserController {
                 throw new Exception("Status is required");
             }
             $this->service->updateUserStatus($authUser['id'], $id, $input['status']);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'], 'USER_STATUS_UPDATED', 'users', $id, ['status' => $input['status']]);
             Response::success('User status updated successfully');
         } catch (Exception $e) {
             Response::error($e->getMessage(), 400);
