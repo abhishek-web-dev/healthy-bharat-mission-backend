@@ -26,8 +26,10 @@ class AdminUserService {
     }
 
     public function updateUserRole(int $adminId, int $userId, string $roleSlug): void {
-        $validRoles = ['user', 'expert', 'admin', 'superadmin'];
-        if (!in_array($roleSlug, $validRoles)) {
+        $admin = $this->repo->getUserById($adminId);
+        $role = $this->repo->getRoleBySlug($roleSlug);
+        
+        if (!$role) {
             throw new Exception("Invalid role");
         }
 
@@ -38,6 +40,30 @@ class AdminUserService {
 
         if ($user['role_slug'] === 'superadmin' && $roleSlug !== 'superadmin') {
             throw new Exception("Cannot demote a superadmin");
+        }
+
+        if ($admin['role_slug'] !== 'superadmin' && $roleSlug === 'superadmin') {
+            throw new Exception("You cannot assign the superadmin role.");
+        }
+
+        // Fetch permissions for the role we're trying to assign
+        if ($admin['role_slug'] !== 'superadmin') {
+            // Need to get admin's permissions and the target role's permissions
+            // Since getUserById doesn't return permissions directly (AuthRepository does),
+            // we can delegate to AuthRepository to get the admin's full profile
+            $authRepo = new \HBM\Repositories\AuthRepository();
+            $adminFull = $authRepo->getUserById($adminId);
+            $adminPerms = $adminFull['permissions'] ?? [];
+
+            $db = \HBM\Core\Database::getConnection();
+            $stmt = $db->prepare("SELECT p.slug FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = ?");
+            $stmt->execute([$role['id']]);
+            $rolePerms = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+            $unauthorizedPerms = array_diff($rolePerms, $adminPerms);
+            if (!empty($unauthorizedPerms)) {
+                throw new Exception("You cannot assign a role that has permissions you do not possess.");
+            }
         }
 
         $this->repo->updateUserRole($userId, $roleSlug);
@@ -61,5 +87,29 @@ class AdminUserService {
 
         $this->repo->updateUserStatus($userId, $status);
         AdminActivityLogger::log($adminId, 'UPDATE_STATUS', 'users', $userId, ['new_status' => $status]);
+    }
+    public function getDeletedUsers(int $limit = 50, int $offset = 0): array {
+        return $this->repo->getDeletedUsers($limit, $offset);
+    }
+
+    public function softDeleteUser(int $adminId, int $userId): void {
+        $user = $this->repo->getUserById($userId);
+        if (!$user) {
+            throw new Exception("User not found");
+        }
+        if ($user['role_slug'] === 'superadmin') {
+            throw new Exception("Cannot delete a superadmin");
+        }
+        $this->repo->softDeleteUser($userId);
+        AdminActivityLogger::log($adminId, 'USER_DELETED', 'users', $userId, []);
+    }
+
+    public function restoreUser(int $adminId, int $userId): void {
+        $user = $this->repo->getUserById($userId);
+        if (!$user) {
+            throw new Exception("User not found");
+        }
+        $this->repo->restoreUser($userId);
+        AdminActivityLogger::log($adminId, 'USER_RESTORED', 'users', $userId, []);
     }
 }

@@ -8,6 +8,9 @@
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
+// Set timezone to match MySQL (IST) to prevent OTP expiration issues
+date_default_timezone_set('Asia/Kolkata');
+
 // Load Composer Autoloader
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require __DIR__ . '/../vendor/autoload.php';

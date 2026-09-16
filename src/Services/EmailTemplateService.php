@@ -132,6 +132,22 @@ class EmailTemplateService {
         return self::getBaseTemplate($title, $content);
     }
 
+    public static function getAdminOtpEmail(string $code): string {
+        $title = "HBM Admin Login Verification Code";
+        
+        $content = <<<HTML
+        <p>Hello,</p>
+        <p>Your Healthy Bharat Mission Admin Panel verification code is:</p>
+        <div class="otp-box">
+            <p class="otp-code">{$code}</p>
+        </div>
+        <p>This code expires in 5 minutes.</p>
+        <p>If you did not attempt to sign in, please ignore this email.</p>
+        HTML;
+
+        return self::getBaseTemplate($title, $content);
+    }
+
     public static function getPasswordResetEmail(string $resetLink): string {
         $title = "Reset Your Password";
         

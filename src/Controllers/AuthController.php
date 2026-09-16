@@ -194,4 +194,61 @@ class AuthController {
             Response::error($e->getMessage(), 400);
         }
     }
+
+    // Admin Auth
+    public function adminLogin(): void {
+        try {
+            $data = Request::getJson();
+            $email = $data['email'] ?? '';
+            $password = $data['password'] ?? '';
+            
+            $challenge = $this->authService->adminLoginStart($email, $password);
+            
+            Response::success("OTP sent to your email.", $challenge);
+        } catch (Exception $e) {
+            if (strpos($e->getMessage(), 'Unable to send OTP') !== false) {
+                Response::error($e->getMessage(), 500);
+            } else {
+                Response::error($e->getMessage(), 401);
+            }
+        }
+    }
+
+    public function verifyAdminOtp(): void {
+        try {
+            $data = Request::getJson();
+            $challengeId = $data['challenge_id'] ?? '';
+            $otp = $data['otp'] ?? '';
+            
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+            $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+            $token = $this->authService->adminLoginVerify($challengeId, $otp, $ip, $ua);
+            
+            setcookie('auth_token', $token, [
+                'expires' => time() + (30 * 24 * 60 * 60),
+                'path' => '/',
+                'secure' => isset($_SERVER['HTTPS']),
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+
+            Response::success("Login successful.", ['token' => $token]);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 401);
+        }
+    }
+
+    public function resendAdminOtp(): void {
+        try {
+            $data = Request::getJson();
+            $challengeId = $data['challenge_id'] ?? '';
+            
+            $challenge = $this->authService->adminLoginResend($challengeId);
+            
+            Response::success("OTP resent to your email.", $challenge);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
 }

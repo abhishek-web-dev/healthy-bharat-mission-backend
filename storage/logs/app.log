@@ -345,3 +345,30 @@
 [2026-09-15 12:54:48] WARNING: Failed login attempt - wrong password {"user_id":4}
 [2026-09-15 12:55:05] INFO: User logged in {"user_id":4}
 [2026-09-15 12:59:02] INFO: User logged in {"user_id":6}
+[2026-09-16 08:38:09] ERROR: Uncaught Exception: Class "HBM\Config\Database" not found {"file":"\/media\/abhishekn\/New Volume\/BKM\/Healthy_Mission_Bharat\/backend\/src\/Services\/AdminCategoryService.php","line":12}
+[2026-09-16 13:35:22] WARNING: Failed login attempt - wrong password {"user_id":1}
+[2026-09-16 17:50:32] INFO: User logged in {"user_id":9}
+[2026-09-16 20:36:32] WARNING: Failed admin login attempt - user not found or not admin {"email":"superadmin@healthybharatmission.com"}
+[2026-09-16 20:37:18] WARNING: Failed admin login attempt - wrong password {"user_id":5}
+[2026-09-16 20:37:34] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:38:37] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:41:41] INFO: OTP Generated {"identifier":"abhishek@brandkingmedia.com","type":"admin_login","otp_mock":"103028"}
+[2026-09-16 20:41:41] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:45:58] INFO: OTP Generated {"identifier":"abhishek@brandkingmedia.com","type":"admin_login","otp_mock":"448084"}
+[2026-09-16 20:45:58] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:48:03] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:48:19] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:50:28] INFO: OTP Generated {"identifier":"superadmin@healthybharatmission.com","type":"admin_login","otp_mock":"464512"}
+[2026-09-16 20:50:28] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:50:28] ERROR: Failed to send admin OTP email to superadmin@healthybharatmission.com {"error":"Email service failed to deliver OTP."}
+[2026-09-16 20:52:50] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:52:50] ERROR: Failed to send admin OTP email to abhishek@brandkingmedia.com {"error":"Email service failed to deliver OTP."}
+[2026-09-16 20:58:31] ERROR: EmailService: Missing ZeptoMail API Key in .env 
+[2026-09-16 20:58:33] ERROR: Failed to send admin OTP email to abhishek@brandkingmedia.com {"error":"Email service failed to deliver OTP."}
+[2026-09-16 21:01:32] ERROR: EmailService: API Error sending email {"http_code":401,"response":{"error":{"code":"TM_4001","details":[{"code":"SERR_157","message":"Invalid API Token found"}],"message":"Access Denied"}},"payload":{"from":{"address":"hello@healthybharatmission.com","name":"\"Healthy Bharat Mission\""},"to":[{"email_address":{"address":"test@healthybharatmission.com","name":""}}],"subject":"Test Subject","htmlbody":"<p>Test Body<\/p>"}}
+[2026-09-16 21:01:52] INFO: EmailService: Email sent successfully to test@healthybharatmission.com {"response":{"data":[{"code":"EM_104","additional_info":[],"message":"Email request received"}],"message":"OK","request_id":"2518b.506a09f931e7db3b.m1.d7a774a0-b211-11f1-b715-ae9c7e0b6a9f.1a0ac06a8ea","object":"email"}}
+[2026-09-16 21:02:02] INFO: EmailService: Email sent successfully to superadmin@healthybharatmission.com {"response":{"data":[{"code":"EM_104","additional_info":[],"message":"Email request received"}],"message":"OK","request_id":"2518b.506a09f931e7db3b.m1.dd7de6c0-b211-11f1-a418-62df313bf14d.1a0ac06cf2c","object":"email"}}
+[2026-09-16 21:02:58] INFO: EmailService: Email sent successfully to abhishek@brandkingmedia.com {"response":{"data":[{"code":"EM_104","additional_info":[],"message":"Email request received"}],"message":"OK","request_id":"2518b.506a09f931e7db3b.m1.fea26600-b211-11f1-b715-ae9c7e0b6a9f.1a0ac07a860","object":"email"}}
+[2026-09-17 02:35:49] INFO: EmailService: Email sent successfully to superadmin@healthybharatmission.com {"response":{"data":[{"code":"EM_104","additional_info":[],"message":"Email request received"}],"message":"OK","request_id":"2518b.506a09f931e7db3b.m1.64f354a0-b212-11f1-b2dd-cabf48e1bf81.1a0ac0a46ea","object":"email"}}
+[2026-09-17 02:36:31] INFO: EmailService: Email sent successfully to abhishek@brandkingmedia.com {"response":{"data":[{"code":"EM_104","additional_info":[],"message":"Email request received"}],"message":"OK","request_id":"2518b.506a09f931e7db3b.m1.7db90930-b212-11f1-b2fb-d2cf08f4ca8c.1a0ac0ae943","object":"email"}}
+[2026-09-17 02:36:46] INFO: Admin logged in securely {"user_id":9}

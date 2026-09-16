@@ -64,4 +64,34 @@ class AdminUserController {
             Response::error($e->getMessage(), 400);
         }
     }
+    public function listDeletedUsers(): void {
+        try {
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+            $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+            $users = $this->service->getDeletedUsers($limit, $offset);
+            Response::success('Deleted users fetched successfully', ['users' => $users]);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 500);
+        }
+    }
+
+    public function deleteUser(int $id): void {
+        global $authUser;
+        try {
+            $this->service->softDeleteUser($authUser['id'], $id);
+            Response::success('User deleted successfully');
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function restoreUser(int $id): void {
+        global $authUser;
+        try {
+            $this->service->restoreUser($authUser['id'], $id);
+            Response::success('User restored successfully');
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
 }

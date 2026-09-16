@@ -5,6 +5,9 @@ namespace HBM\Helpers;
 class Response {
     public static function json(array $data, int $statusCode = 200): void {
         http_response_code($statusCode);
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data);
         exit;

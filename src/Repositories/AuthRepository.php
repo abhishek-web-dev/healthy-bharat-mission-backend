@@ -23,7 +23,19 @@ class AuthRepository {
             WHERE u.id = ? LIMIT 1
         ");
         $stmt->execute([$id]);
-        $user = $stmt->fetch();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user) {
+            $permStmt = $db->prepare("
+                SELECT p.slug 
+                FROM role_permissions rp
+                JOIN permissions p ON rp.permission_id = p.id
+                WHERE rp.role_id = ?
+            ");
+            $permStmt->execute([$user['role_id']]);
+            $user['permissions'] = $permStmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+        
         return $user ?: null;
     }
 
@@ -93,6 +105,55 @@ class AuthRepository {
         $db = Database::getConnection();
         $stmt = $db->prepare("DELETE FROM sessions WHERE user_id = ?");
         $stmt->execute([$userId]);
+    }
+
+    public function deleteAccount(int $userId): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+    }
+
+    // Admin Login Challenges
+    public function createAdminChallenge(int $userId, string $challengeId, string $otpHash, string $expiresAt): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            INSERT INTO admin_login_challenges (user_id, challenge_id, otp_hash, expires_at)
+            VALUES (?, ?, ?, ?)
+        ");
+        $stmt->execute([$userId, $challengeId, $otpHash, $expiresAt]);
+    }
+
+    public function getAdminChallenge(string $challengeId): ?array {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            SELECT * FROM admin_login_challenges 
+            WHERE challenge_id = ? 
+              AND verified_at IS NULL 
+              AND invalidated_at IS NULL 
+              AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        ");
+        $stmt->execute([$challengeId]);
+        $challenge = $stmt->fetch();
+        return $challenge ?: null;
+    }
+
+    public function updateAdminChallengeAttempts(int $id, int $attempts): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("UPDATE admin_login_challenges SET attempts = ? WHERE id = ?");
+        $stmt->execute([$attempts, $id]);
+    }
+
+    public function markAdminChallengeVerified(int $id): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("UPDATE admin_login_challenges SET verified_at = NOW() WHERE id = ?");
+        $stmt->execute([$id]);
+    }
+
+    public function invalidateAdminChallenge(int $id): void {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("UPDATE admin_login_challenges SET invalidated_at = NOW() WHERE id = ?");
+        $stmt->execute([$id]);
     }
 
     // OTP

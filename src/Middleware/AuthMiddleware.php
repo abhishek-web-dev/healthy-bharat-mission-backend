@@ -49,4 +49,18 @@ class AuthMiddleware {
     public static function handleSuperAdmin(): void {
         self::handleRole([]); // Empty array means ONLY superadmin can access since handleRole explicitly checks for 'superadmin' separately.
     }
+
+    public static function requirePermission(string $permissionSlug): void {
+        self::handle(); // Ensure authenticated first
+        
+        global $authUser;
+        
+        if ($authUser['role_slug'] === 'superadmin') {
+            return; // Superadmins have all permissions
+        }
+
+        if (empty($authUser['permissions']) || !in_array($permissionSlug, $authUser['permissions'])) {
+            Response::error('Forbidden - Insufficient permissions', 403);
+        }
+    }
 }

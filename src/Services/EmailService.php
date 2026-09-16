@@ -12,10 +12,10 @@ class EmailService {
     private string $fromName;
 
     public function __construct() {
-        $this->apiUrl = "https://" . ($_ENV['MAIL_HOST'] ?? 'api.zeptomail.in') . "/v1.1/email";
-        $this->apiKey = $_ENV['MAIL_API_KEY'] ?? '';
-        $this->fromAddress = $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@healthybharatmission.com';
-        $this->fromName = $_ENV['MAIL_FROM_NAME'] ?? 'Healthy Bharat Mission';
+        $this->apiUrl = "https://" . ($_ENV['MAIL_HOST'] ?? getenv('MAIL_HOST') ?: 'api.zeptomail.in') . "/v1.1/email";
+        $this->apiKey = $_ENV['MAIL_API_KEY'] ?? getenv('MAIL_API_KEY') ?: '';
+        $this->fromAddress = $_ENV['MAIL_FROM_ADDRESS'] ?? getenv('MAIL_FROM_ADDRESS') ?: 'noreply@healthybharatmission.com';
+        $this->fromName = $_ENV['MAIL_FROM_NAME'] ?? getenv('MAIL_FROM_NAME') ?: 'Healthy Bharat Mission';
     }
 
     /**
@@ -77,14 +77,20 @@ class EmailService {
 
         if ($error) {
             Logger::error("EmailService: CURL Error sending email to $toEmail", ['error' => $error]);
-            throw new Exception("Failed to send email. Communication error.");
+            return false;
         }
 
+        $responseData = json_decode($response, true);
+        
         if ($httpCode >= 200 && $httpCode < 300) {
-            Logger::info("EmailService: Email sent successfully to $toEmail");
+            Logger::info("EmailService: Email sent successfully to $toEmail", ['response' => $responseData]);
             return true;
         } else {
-            Logger::error("EmailService: API Error sending email", ['http_code' => $httpCode, 'response' => $response]);
+            Logger::error("EmailService: API Error sending email", [
+                'http_code' => $httpCode, 
+                'response' => $responseData, 
+                'payload' => $payload
+            ]);
             return false;
         }
     }

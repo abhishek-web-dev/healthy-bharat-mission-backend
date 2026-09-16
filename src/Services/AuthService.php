@@ -262,4 +262,117 @@ class AuthService {
         
         Logger::info("User deleted account", ['user_id' => $userId]);
     }
+    public function adminLoginStart(string $email, string $password): array {
+        $user = $this->authRepo->getUserByEmailOrPhone($email);
+        
+        // 1 = Super Admin, 2 = Admin
+        if (!$user || !in_array($user['role_id'], [1, 2])) {
+            Logger::warning("Failed admin login attempt - user not found or not admin", ['email' => $email]);
+            throw new Exception("Invalid credentials."); 
+        }
+
+        if ($user['status'] !== 'active') {
+            Logger::warning("Failed admin login attempt - inactive user", ['user_id' => $user['id']]);
+            throw new Exception("Account is inactive or suspended.");
+        }
+
+        if (!password_verify($password, $user['password_hash'])) {
+            Logger::warning("Failed admin login attempt - wrong password", ['user_id' => $user['id']]);
+            throw new Exception("Invalid credentials.");
+        }
+
+        return $this->createAndSendAdminChallenge($user);
+    }
+    
+    private function createAndSendAdminChallenge(array $user): array {
+        $challengeId = bin2hex(random_bytes(32));
+        $otp = (string)random_int(100000, 999999);
+        $otpHash = password_hash($otp, PASSWORD_DEFAULT);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+        
+        $this->authRepo->createAdminChallenge($user['id'], $challengeId, $otpHash, $expiresAt);
+        
+        \HBM\Services\AdminActivityLogService::log($user['id'], 'ADMIN_LOGIN_OTP_SENT', 'users', $user['id']);
+        
+        $subject = "HBM Admin Login Verification Code";
+        $message = EmailTemplateService::getAdminOtpEmail($otp);
+        try {
+            $success = $this->emailService->sendEmail($user['email'], $subject, $message);
+            if (!$success) {
+                throw new Exception("Email service failed to deliver OTP.");
+            }
+        } catch (Exception $e) {
+            Logger::error("Failed to send admin OTP email to " . $user['email'], ['error' => $e->getMessage()]);
+            throw new Exception("Unable to send OTP at this time. Please try again later.");
+        }
+        
+        $parts = explode('@', $user['email']);
+        $masked = substr($parts[0], 0, 1) . str_repeat('*', max(1, strlen($parts[0])-1)) . '@' . $parts[1];
+        
+        return [
+            'challenge_id' => $challengeId,
+            'masked_email' => $masked
+        ];
+    }
+
+    public function adminLoginVerify(string $challengeId, string $otp, string $ip, string $userAgent): string {
+        $challenge = $this->authRepo->getAdminChallenge($challengeId);
+        
+        if (!$challenge) {
+            throw new Exception("Invalid or expired login session.");
+        }
+        
+        $user = $this->authRepo->getUserById($challenge['user_id']);
+        if (!$user) throw new Exception("User not found.");
+
+        if ($challenge['attempts'] >= 5) {
+            $this->authRepo->invalidateAdminChallenge($challenge['id']);
+            \HBM\Services\AdminActivityLogService::log($user['id'], 'ADMIN_LOGIN_OTP_FAILED', 'users', $user['id'], ['reason' => 'max_attempts_reached']);
+            throw new Exception("Too many attempts. Please start over.");
+        }
+
+        if (!password_verify($otp, $challenge['otp_hash'])) {
+            $newAttempts = $challenge['attempts'] + 1;
+            $this->authRepo->updateAdminChallengeAttempts($challenge['id'], $newAttempts);
+            
+            if ($newAttempts >= 5) {
+                $this->authRepo->invalidateAdminChallenge($challenge['id']);
+                \HBM\Services\AdminActivityLogService::log($user['id'], 'ADMIN_LOGIN_OTP_FAILED', 'users', $user['id'], ['reason' => 'max_attempts_reached']);
+                throw new Exception("Too many attempts. Please start over.");
+            }
+            
+            throw new Exception("Invalid OTP.");
+        }
+
+        $this->authRepo->markAdminChallengeVerified($challenge['id']);
+        
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+        $this->authRepo->createSession($user['id'], $token, $ip, $userAgent, $expiresAt);
+        
+        \HBM\Services\AdminActivityLogService::log($user['id'], 'ADMIN_LOGIN_OTP_VERIFIED', 'users', $user['id']);
+        Logger::info("Admin logged in securely", ['user_id' => $user['id']]);
+
+        return $token;
+    }
+
+    public function adminLoginResend(string $challengeId): array {
+        $challenge = $this->authRepo->getAdminChallenge($challengeId);
+        if (!$challenge) {
+            throw new Exception("Invalid or expired login session.");
+        }
+        
+        $createdAt = strtotime($challenge['created_at']);
+        if (time() - $createdAt < 60) {
+            throw new Exception("Please wait 60 seconds before requesting a new OTP.");
+        }
+        
+        $this->authRepo->invalidateAdminChallenge($challenge['id']);
+        
+        $user = $this->authRepo->getUserById($challenge['user_id']);
+        if (!$user) throw new Exception("User not found.");
+        
+        return $this->createAndSendAdminChallenge($user);
+    }
 }
