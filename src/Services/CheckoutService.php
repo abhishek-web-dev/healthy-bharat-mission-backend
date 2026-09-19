@@ -69,14 +69,25 @@ class CheckoutService {
             throw new Exception("Cart is empty. Cannot create order.");
         }
 
-        $addressId = $orderData['address_id'] ?? null;
-        if (!$addressId) {
-            throw new Exception("Shipping address is required.");
+        $isDigitalOnly = true;
+        foreach ($cartItems as $item) {
+            if (empty($item['is_digital'])) {
+                $isDigitalOnly = false;
+                break;
+            }
         }
 
-        $address = $this->checkoutRepo->getAddressById((int)$addressId, $userId);
-        if (!$address) {
-            throw new Exception("Invalid shipping address.");
+        $addressId = $orderData['address_id'] ?? null;
+        $address = null;
+
+        if (!$isDigitalOnly) {
+            if (!$addressId) {
+                throw new Exception("Shipping address is required for physical products.");
+            }
+            $address = $this->checkoutRepo->getAddressById((int)$addressId, $userId);
+            if (!$address) {
+                throw new Exception("Invalid shipping address.");
+            }
         }
 
         $paymentMethod = $orderData['payment_method'] ?? 'cod';
@@ -112,16 +123,17 @@ class CheckoutService {
                 'order_status' => 'processing',
                 
                 // Snapshot address
-                'shipping_first_name' => $address['first_name'],
-                'shipping_last_name' => $address['last_name'],
-                'shipping_phone' => $address['phone'],
-                'shipping_email' => $address['email'],
-                'shipping_address_line_1' => $address['address_line_1'],
-                'shipping_address_line_2' => $address['address_line_2'],
-                'shipping_city' => $address['city'],
-                'shipping_state' => $address['state'],
-                'shipping_pincode' => $address['pincode'],
-                'shipping_landmark' => $address['landmark']
+                // Snapshot address if available
+                'shipping_first_name' => $address ? $address['first_name'] : null,
+                'shipping_last_name' => $address ? $address['last_name'] : null,
+                'shipping_phone' => $address ? $address['phone'] : null,
+                'shipping_email' => $address ? $address['email'] : null,
+                'shipping_address_line_1' => $address ? $address['address_line_1'] : null,
+                'shipping_address_line_2' => $address ? $address['address_line_2'] : null,
+                'shipping_city' => $address ? $address['city'] : null,
+                'shipping_state' => $address ? $address['state'] : null,
+                'shipping_pincode' => $address ? $address['pincode'] : null,
+                'shipping_landmark' => $address ? $address['landmark'] : null
             ]);
 
             foreach ($cartItems as $item) {
@@ -135,7 +147,8 @@ class CheckoutService {
                     'product_name_snapshot' => $item['name'],
                     'price_snapshot' => $item['price'],
                     'quantity' => $item['quantity'],
-                    'is_digital' => $item['is_digital']
+                    'is_digital' => $item['is_digital'],
+                    'digital_file_path_snapshot' => $item['digital_file_path'] ?? null
                 ]);
             }
 

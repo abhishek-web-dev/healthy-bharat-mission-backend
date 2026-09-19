@@ -43,11 +43,11 @@ class AdminProductRepository {
     public function createProduct(array $data): int {
         $stmt = $this->getDb()->prepare("
             INSERT INTO products (
-                category_id, name, slug, description, price, mrp, stock, is_active, is_digital, 
-                thumbnail_url
+                category_id, name, slug, description, ingredients, nutritional_info, how_to_use, price, mrp, stock, is_active, is_digital, 
+                thumbnail_url, digital_file_path, digital_file_name, digital_file_type
             ) VALUES (
-                :category_id, :name, :slug, :description, :price, :mrp, :stock, :is_active, :is_digital,
-                :thumbnail_url
+                :category_id, :name, :slug, :description, :ingredients, :nutritional_info, :how_to_use, :price, :mrp, :stock, :is_active, :is_digital,
+                :thumbnail_url, :digital_file_path, :digital_file_name, :digital_file_type
             )
         ");
 
@@ -56,12 +56,18 @@ class AdminProductRepository {
             'name' => $data['name'],
             'slug' => $data['slug'],
             'description' => $data['description'] ?? null,
+            'ingredients' => $data['ingredients'] ?? null,
+            'nutritional_info' => $data['nutritional_info'] ?? null,
+            'how_to_use' => $data['how_to_use'] ?? null,
             'price' => $data['price'],
             'mrp' => $data['mrp'] ?? null,
             'stock' => $data['stock'] ?? 0,
             'is_active' => $data['is_active'] ?? 1,
             'is_digital' => $data['is_digital'] ?? 0,
-            'thumbnail_url' => $data['thumbnail_url'] ?? null
+            'thumbnail_url' => $data['thumbnail_url'] ?? null,
+            'digital_file_path' => $data['digital_file_path'] ?? null,
+            'digital_file_name' => $data['digital_file_name'] ?? null,
+            'digital_file_type' => $data['digital_file_type'] ?? null
         ]);
 
         return (int)$this->getDb()->lastInsertId();
@@ -71,7 +77,7 @@ class AdminProductRepository {
         $fields = [];
         $params = ['id' => $id];
 
-        $allowedFields = ['category_id', 'name', 'slug', 'description', 'price', 'mrp', 'stock', 'is_active', 'is_digital', 'thumbnail_url'];
+        $allowedFields = ['category_id', 'name', 'slug', 'description', 'ingredients', 'nutritional_info', 'how_to_use', 'price', 'mrp', 'stock', 'is_active', 'is_digital', 'thumbnail_url', 'digital_file_path', 'digital_file_name', 'digital_file_type'];
         
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {

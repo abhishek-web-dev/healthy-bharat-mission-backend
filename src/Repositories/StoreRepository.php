@@ -92,6 +92,132 @@ class StoreRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // --- Reviews ---
+
+    public function addReviewWithPhotos(int $productId, string $reviewerName, string $reviewerEmail, int $rating, string $title, string $content, string $variant, string $status, array $files): int {
+        $db = Database::getConnection();
+        
+        try {
+            $db->beginTransaction();
+
+            $stmt = $db->prepare("
+                INSERT INTO product_reviews (product_id, reviewer_name, reviewer_email, rating, title, content, variant, status, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            $stmt->execute([
+                $productId,
+                $reviewerName,
+                $reviewerEmail,
+                $rating,
+                $title,
+                $content,
+                $variant,
+                $status
+            ]);
+
+            $reviewId = (int)$db->lastInsertId();
+
+            if (!empty($files['name']) && is_array($files['name'])) {
+                $uploadDir = __DIR__ . '/../../public/uploads/reviews/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $photoStmt = $db->prepare("INSERT INTO review_photos (review_id, product_id, image_path, created_at) VALUES (?, ?, ?, NOW())");
+
+                $fileCount = count($files['name']);
+                for ($i = 0; $i < $fileCount; $i++) {
+                    if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                        $ext = pathinfo($files['name'][$i], PATHINFO_EXTENSION);
+                        // Generate safe filename
+                        $newFileName = uniqid('rev_', true) . '.' . $ext;
+                        $destination = $uploadDir . $newFileName;
+
+                        if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
+                            // Store relative path in DB
+                            $photoPath = '/uploads/reviews/' . $newFileName;
+                            $photoStmt->execute([$reviewId, $productId, $photoPath]);
+                        } else {
+                            throw new \Exception("Failed to save uploaded file.");
+                        }
+                    }
+                }
+            }
+
+            $db->commit();
+            return $reviewId;
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function getProductReviews(int $productId): array {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            SELECT id, reviewer_name, rating, title, content, variant, created_at
+            FROM product_reviews 
+            WHERE product_id = ? AND status = 'approved'
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$productId]);
+        $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($reviews)) {
+            $reviewIds = array_column($reviews, 'id');
+            $placeholders = implode(',', array_fill(0, count($reviewIds), '?'));
+            
+            $photoStmt = $db->prepare("SELECT review_id, image_path FROM review_photos WHERE review_id IN ($placeholders)");
+            $photoStmt->execute($reviewIds);
+            $photos = $photoStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $photosByReview = [];
+            foreach ($photos as $photo) {
+                $photosByReview[$photo['review_id']][] = $photo['image_path'];
+            }
+
+            foreach ($reviews as &$review) {
+                $review['photos'] = $photosByReview[$review['id']] ?? [];
+            }
+        }
+
+        return $reviews;
+    }
+
+    public function getProductReviewStats(int $productId): array {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("
+            SELECT 
+                COUNT(*) as total_reviews,
+                IFNULL(AVG(rating), 0) as average_rating,
+                SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) as star_5,
+                SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as star_4,
+                SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as star_3,
+                SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as star_2,
+                SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as star_1
+            FROM product_reviews 
+            WHERE product_id = ? AND status = 'approved'
+        ");
+        $stmt->execute([$productId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getProductPhotos(int $productId): array {
+        $db = Database::getConnection();
+        // Fetch all photos belonging to APPROVED reviews for this product
+        $stmt = $db->prepare("
+            SELECT rp.image_path, rp.review_id 
+            FROM review_photos rp
+            JOIN product_reviews pr ON rp.review_id = pr.id
+            WHERE rp.product_id = ? AND pr.status = 'approved'
+            ORDER BY rp.created_at DESC
+        ");
+        $stmt->execute([$productId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // --- Cart ---
 
     public function getCartByUserId(int $userId): array {

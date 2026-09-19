@@ -145,4 +145,44 @@ class ContentController {
             Response::error($e->getMessage(), $e->getCode() ?: 400);
         }
     }
+
+    // Contact Options
+    public function getContactOptions(): void {
+        $options = $this->service->getContactOptions(true);
+        Response::success("Contact options retrieved", $options);
+    }
+
+    public function getAdminContactOptions(): void {
+        $options = $this->service->getContactOptions(false);
+        Response::success("Admin contact options retrieved", $options);
+    }
+
+    public function createContactOption(): void {
+        try {
+            $data = Request::getJson();
+            $id = $this->service->createContactOption($data);
+            Response::success("Contact option created", ['id' => $id], 201);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    public function updateContactOption(int $id): void {
+        try {
+            $data = Request::getJson();
+            $this->service->updateContactOption($id, $data);
+            Response::success("Contact option updated");
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
+
+    public function deleteContactOption(int $id): void {
+        try {
+            $this->service->deleteContactOption($id);
+            Response::success("Contact option deleted");
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), $e->getCode() ?: 400);
+        }
+    }
 }

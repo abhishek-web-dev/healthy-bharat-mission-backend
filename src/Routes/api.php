@@ -107,6 +107,7 @@ $router->get('/api/faqs', [ContentController::class, 'getFaqs']);
 $router->get('/api/success-stories', [ContentController::class, 'getSuccessStories']);
 
 $router->post('/api/contact', [ContentController::class, 'submitContact']);
+$router->get('/api/contact-options', [ContentController::class, 'getContactOptions']);
 $router->post('/api/newsletter/subscribe', [ContentController::class, 'subscribeNewsletter']);
 
 // Store Routes (Public)
@@ -150,6 +151,33 @@ $router->delete('/api/wishlist/{id}', function($id) use ($router) {
     (new StoreController())->removeWishlistItem($id);
 });
 
+// Admin Contact Options
+$router->get('/api/admin/contact-options', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new ContentController())->getAdminContactOptions();
+});
+$router->post('/api/admin/contact-options', function() use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new ContentController())->createContactOption();
+});
+$router->put('/api/admin/contact-options/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new ContentController())->updateContactOption($id);
+});
+$router->delete('/api/admin/contact-options/{id}', function($id) use ($router) {
+    AuthMiddleware::handleAdmin();
+    (new ContentController())->deleteContactOption($id);
+});
+
+// Reviews Routes
+$router->post('/api/store/reviews', function() use ($router) {
+    AuthMiddleware::handle();
+    (new StoreController())->submitReview();
+});
+$router->get('/api/store/products/{id}/reviews', function($id) use ($router) {
+    (new StoreController())->getProductReviews($id);
+});
+
 // Checkout & Orders Routes// Store / Checkout APIs
 use HBM\Controllers\StoreCouponController;
 $router->get('/api/store/coupons', [StoreCouponController::class, 'getActiveCoupons']);
@@ -187,6 +215,10 @@ $router->get('/api/orders/{id}', function($id) use ($router) {
 $router->get('/api/orders/{id}/invoice/download', function($id) use ($router) {
     AuthMiddleware::handle();
     (new CheckoutController())->downloadInvoice($id);
+});
+$router->get('/api/orders/{id}/download/{productId}', function($id, $productId) use ($router) {
+    AuthMiddleware::handle();
+    (new CheckoutController())->downloadDigitalProduct($id, $productId);
 });
 $router->post('/api/payments/verify', function() use ($router) {
     AuthMiddleware::handle();

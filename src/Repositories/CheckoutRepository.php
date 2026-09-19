@@ -128,12 +128,20 @@ class CheckoutRepository {
     public function createOrderItem(array $itemData): void {
         $stmt = $this->getDb()->prepare("
             INSERT INTO order_items (
-                order_id, product_id, product_name_snapshot, price_snapshot, quantity, is_digital
+                order_id, product_id, product_name_snapshot, price_snapshot, quantity, is_digital, digital_file_path_snapshot
             ) VALUES (
-                :order_id, :product_id, :product_name_snapshot, :price_snapshot, :quantity, :is_digital
+                :order_id, :product_id, :product_name_snapshot, :price_snapshot, :quantity, :is_digital, :digital_file_path_snapshot
             )
         ");
-        $stmt->execute($itemData);
+        $stmt->execute([
+            'order_id' => $itemData['order_id'],
+            'product_id' => $itemData['product_id'],
+            'product_name_snapshot' => $itemData['product_name_snapshot'],
+            'price_snapshot' => $itemData['price_snapshot'],
+            'quantity' => $itemData['quantity'],
+            'is_digital' => $itemData['is_digital'] ?? 0,
+            'digital_file_path_snapshot' => $itemData['digital_file_path_snapshot'] ?? null
+        ]);
     }
 
     public function createPaymentRecord(array $paymentData): int {

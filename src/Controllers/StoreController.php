@@ -55,6 +55,117 @@ class StoreController {
         }
     }
 
+    // --- Reviews ---
+
+    public function submitReview(): void {
+        try {
+            global $authUser;
+            if (!$authUser) {
+                Response::error("Unauthorized - Please login to submit a review", 401);
+                return;
+            }
+
+            // Fallback for JSON requests if needed, but primary is FormData ($_POST)
+            $isJson = strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false;
+            if ($isJson) {
+                $data = json_decode(file_get_contents('php://input'), true);
+            } else {
+                $data = $_POST;
+            }
+
+            $productId = $data['product_id'] ?? null;
+            $rating = $data['rating'] ?? 0;
+            $title = trim($data['title'] ?? '');
+            $content = trim($data['content'] ?? '');
+            $variant = trim($data['variant'] ?? '');
+
+            if (!$productId) {
+                Response::error("Product ID is required.", 400);
+                return;
+            }
+            if ($rating < 1 || $rating > 5) {
+                Response::error("Rating must be between 1 and 5.", 400);
+                return;
+            }
+            if (empty($title)) {
+                Response::error("Review title is required.", 400);
+                return;
+            }
+
+            // Handle file uploads validation
+            $uploadedPhotos = [];
+            if (!empty($_FILES['photos']['name']) && is_array($_FILES['photos']['name'])) {
+                $fileCount = count($_FILES['photos']['name']);
+                if ($fileCount > 3) {
+                    Response::error("Maximum 3 photos allowed.", 400);
+                    return;
+                }
+
+                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                $maxSize = 5 * 1024 * 1024; // 5MB
+
+                for ($i = 0; $i < $fileCount; $i++) {
+                    if ($_FILES['photos']['error'][$i] !== UPLOAD_ERR_OK) {
+                        if ($_FILES['photos']['error'][$i] === UPLOAD_ERR_NO_FILE) continue;
+                        Response::error("Error uploading photo " . ($i + 1), 400);
+                        return;
+                    }
+
+                    $tmpName = $_FILES['photos']['tmp_name'][$i];
+                    $size = $_FILES['photos']['size'][$i];
+                    
+                    if ($size > $maxSize) {
+                        Response::error("Photo " . ($i + 1) . " exceeds the 5MB size limit.", 400);
+                        return;
+                    }
+
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $tmpName);
+                    finfo_close($finfo);
+
+                    if (!in_array($mimeType, $allowedMimeTypes)) {
+                        Response::error("Photo " . ($i + 1) . " has an invalid format. Only JPG, PNG, and WebP are allowed.", 400);
+                        return;
+                    }
+                }
+            }
+
+            $reviewerName = trim($authUser['first_name'] . ' ' . $authUser['last_name']);
+            $reviewerEmail = $authUser['email'];
+
+            // Insert review (transaction is handled in service)
+            $reviewId = $this->service->submitReviewWithPhotos(
+                (int)$productId,
+                $reviewerName,
+                $reviewerEmail,
+                (int)$rating,
+                $title,
+                $content,
+                $variant,
+                $_FILES['photos'] ?? []
+            );
+
+            Response::success("Review submitted successfully.", ['review_id' => $reviewId]);
+        } catch (Exception $e) {
+            error_log("Error in StoreController::submitReview: " . $e->getMessage());
+            Response::error("Failed to submit review: " . $e->getMessage(), 500);
+        }
+    }
+
+    public function getProductReviews(string $identifier): void {
+        try {
+            $data = $this->service->getProductReviewsWithStats($identifier);
+            if (!$data) {
+                Response::error("Product not found.", 404);
+                return;
+            }
+            Response::success("Reviews fetched successfully.", $data);
+        } catch (Exception $e) {
+            error_log("Error in StoreController::getProductReviews: " . $e->getMessage());
+            Response::error("Failed to fetch reviews: " . $e->getMessage(), 500);
+        }
+    }
+
     // --- Cart ---
     
     private function getUserId(): int {

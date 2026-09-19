@@ -60,13 +60,20 @@ class AdminReviewRepository {
         $db = Database::getConnection();
         $stmt = $db->prepare("
             SELECT r.*, 
-                   p.name as product_name, p.sku as product_sku, p.thumbnail_url as product_image, p.price, p.mrp
+                   p.name as product_name, p.sku as product_sku, p.thumbnail_url as product_image, p.price, p.mrp, p.slug as product_slug
             FROM product_reviews r
             JOIN products p ON r.product_id = p.id
             WHERE r.id = ?
         ");
         $stmt->execute([$id]);
         $review = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($review) {
+            $photoStmt = $db->prepare("SELECT image_path FROM review_photos WHERE review_id = ?");
+            $photoStmt->execute([$id]);
+            $review['photos'] = $photoStmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+        
         return $review ?: null;
     }
 

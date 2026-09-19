@@ -26,6 +26,45 @@ class StoreService {
         return $this->repository->getProductCategories();
     }
 
+    // --- Reviews ---
+
+    public function submitReviewWithPhotos(int $productId, string $reviewerName, string $reviewerEmail, int $rating, string $title, string $content, string $variant, array $files): int {
+        // Validate product exists
+        $product = $this->repository->getProductByIdOrSlug((string)$productId);
+        if (!$product) {
+            throw new Exception("Product not found.");
+        }
+
+        return $this->repository->addReviewWithPhotos(
+            $productId,
+            $reviewerName,
+            $reviewerEmail,
+            $rating,
+            $title,
+            $content,
+            $variant,
+            'pending',
+            $files
+        );
+    }
+
+    public function getProductReviewsWithStats(string $identifier): ?array {
+        $product = $this->repository->getProductByIdOrSlug($identifier);
+        if (!$product) {
+            return null;
+        }
+
+        $reviews = $this->repository->getProductReviews($product['id']);
+        $stats = $this->repository->getProductReviewStats($product['id']);
+        $allPhotos = $this->repository->getProductPhotos($product['id']);
+
+        return [
+            'reviews' => $reviews,
+            'stats' => $stats,
+            'photos' => $allPhotos
+        ];
+    }
+
     // --- Cart ---
 
     public function getCart(int $userId): array {

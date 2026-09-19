@@ -175,4 +175,76 @@ class CheckoutController {
             exit;
         }
     }
+
+    public function downloadDigitalProduct(int $orderId, int $productId): void {
+        global $authUser;
+        try {
+            if (!$authUser) {
+                Response::error("Unauthorized", 401);
+                return;
+            }
+
+            // Verify order belongs to user and is paid
+            $order = $this->checkoutService->getOrderDetails($orderId, $authUser['id']);
+            if (!$order) {
+                Response::error("Order not found or unauthorized.", 404);
+                return;
+            }
+
+            // Must be paid
+            if (strtolower($order['payment_status']) !== 'paid') {
+                Response::error("Cannot download digital product for unpaid orders.", 403);
+                return;
+            }
+
+            // Find the order item
+            $items = $order['items'] ?? [];
+            $targetItem = null;
+            foreach ($items as $item) {
+                if ($item['product_id'] == $productId && !empty($item['is_digital'])) {
+                    $targetItem = $item;
+                    break;
+                }
+            }
+
+            if (!$targetItem) {
+                Response::error("Digital product not found in this order.", 404);
+                return;
+            }
+
+            $filePath = $targetItem['digital_file_path_snapshot'];
+            if (empty($filePath)) {
+                Response::error("No digital file associated with this product.", 404);
+                return;
+            }
+
+            // The file path in DB is just the filename for digital products
+            $absolutePath = __DIR__ . '/../../storage/digital_products/' . ltrim($filePath, '/');
+            $realPath = realpath($absolutePath);
+            $expectedBase = realpath(__DIR__ . '/../../storage/digital_products');
+
+            if (!$realPath || !file_exists($realPath) || strpos($realPath, $expectedBase) !== 0) {
+                Response::error("The requested digital file is no longer available on the server.", 404);
+                return;
+            }
+
+            $fileName = basename($realPath);
+            $mimeType = mime_content_type($realPath) ?: 'application/octet-stream';
+
+            header('Content-Type: ' . $mimeType);
+            header('Content-Disposition: attachment; filename="' . $fileName . '"');
+            header('Content-Length: ' . filesize($realPath));
+            
+            // Clear output buffer to prevent corrupted files
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            readfile($realPath);
+            exit;
+
+        } catch (\Throwable $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
 }

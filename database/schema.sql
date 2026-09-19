@@ -114,6 +114,8 @@ CREATE TABLE `sessions` (
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+
 CREATE TABLE `password_resets` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `email` VARCHAR(150) NOT NULL,
@@ -172,6 +174,9 @@ CREATE TABLE `products` (
     `price` DECIMAL(10,2) NOT NULL,
     `stock` INT NOT NULL DEFAULT 0,
     `is_digital` BOOLEAN DEFAULT FALSE,
+    `digital_file_path` VARCHAR(255) DEFAULT NULL,
+    `digital_file_name` VARCHAR(255) DEFAULT NULL,
+    `digital_file_type` VARCHAR(50) DEFAULT NULL,
     `is_active` BOOLEAN DEFAULT TRUE,
     `thumbnail_url` VARCHAR(255) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -272,6 +277,7 @@ CREATE TABLE `order_items` (
     `price_snapshot` DECIMAL(10,2) NOT NULL,
     `quantity` INT UNSIGNED NOT NULL,
     `is_digital` BOOLEAN DEFAULT FALSE,
+    `digital_file_path_snapshot` VARCHAR(255) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE SET NULL
@@ -430,6 +436,7 @@ CREATE TABLE `articles` (
     `image_url` VARCHAR(255) DEFAULT NULL,
     `status` ENUM('draft', 'published', 'archived') DEFAULT 'draft',
     `published_at` TIMESTAMP NULL DEFAULT NULL,
+    `read_time_minutes` INT NOT NULL DEFAULT 5,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `deleted_at` TIMESTAMP NULL DEFAULT NULL,

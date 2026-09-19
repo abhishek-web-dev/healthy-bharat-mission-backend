@@ -149,4 +149,26 @@ class ContentService {
         }
         $this->repo->subscribeNewsletter($email);
     }
+
+    public function getContactOptions(bool $activeOnly = false): array {
+        return $this->repo->getContactOptions($activeOnly);
+    }
+
+    public function createContactOption(array $data): int {
+        if (empty($data['label']) || empty($data['value'])) {
+            throw new Exception("Label and value are required", 422);
+        }
+        return $this->repo->createContactOption($data);
+    }
+
+    public function updateContactOption(int $id, array $data): void {
+        if (empty($data['label']) || empty($data['value'])) {
+            throw new Exception("Label and value are required", 422);
+        }
+        $this->repo->updateContactOption($id, $data);
+    }
+
+    public function deleteContactOption(int $id): void {
+        $this->repo->deleteContactOption($id);
+    }
 }

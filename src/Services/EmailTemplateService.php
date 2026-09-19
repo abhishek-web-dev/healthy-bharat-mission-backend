@@ -167,9 +167,29 @@ class EmailTemplateService {
     public static function getOrderConfirmationEmail(array $order): string {
         $title = "Order Confirmation";
         $orderNumber = htmlspecialchars($order['order_number'] ?? '');
+        
+        $hasDigitalProducts = false;
+        if (!empty($order['items']) && is_array($order['items'])) {
+            foreach ($order['items'] as $item) {
+                if (!empty($item['is_digital'])) {
+                    $hasDigitalProducts = true;
+                    break;
+                }
+            }
+        }
+        
+        $digitalNotice = '';
+        if ($hasDigitalProducts) {
+            $digitalNotice = "<div style='background-color: #f0fdf4; border-left: 4px solid #106e39; padding: 15px; margin: 20px 0;'>
+                <strong>Digital Downloads Available!</strong><br>
+                Your digital products are ready for download. Please log in to your account and go to <strong>Dashboard > My Orders</strong> to access your files.
+            </div>";
+        }
+        
         $content = "
             <h2 style='color:#052b14; margin-bottom:15px;'>Thank you for your order!</h2>
             <p style='color:#475569; margin-bottom:15px;'>Your order <strong>#{$orderNumber}</strong> has been successfully placed.</p>
+            {$digitalNotice}
             <p style='color:#475569; margin-bottom:15px;'>We have attached your invoice to this email for your records.</p>
             <p style='color:#475569;'>You can also download your invoice and view your order details anytime from your account dashboard.</p>
         ";

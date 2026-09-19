@@ -26,7 +26,15 @@ class AdminProductController {
 
     public function createProduct(): void {
         global $authUser;
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        if (!empty($_POST['payload'])) {
+            $input = json_decode($_POST['payload'], true) ?? [];
+            if (isset($_FILES['digital_file']) && $_FILES['digital_file']['error'] === UPLOAD_ERR_OK) {
+                $input['digital_file'] = $_FILES['digital_file'];
+            }
+        } else {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        }
         
         try {
             $id = $this->service->createProduct($authUser['id'], $input);
@@ -39,7 +47,15 @@ class AdminProductController {
 
     public function updateProduct(int $id): void {
         global $authUser;
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        if (!empty($_POST['payload'])) {
+            $input = json_decode($_POST['payload'], true) ?? [];
+            if (isset($_FILES['digital_file']) && $_FILES['digital_file']['error'] === UPLOAD_ERR_OK) {
+                $input['digital_file'] = $_FILES['digital_file'];
+            }
+        } else {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        }
         
         try {
             $this->service->updateProduct($authUser['id'], $id, $input);

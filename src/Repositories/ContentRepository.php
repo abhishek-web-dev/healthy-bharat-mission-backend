@@ -220,8 +220,8 @@ class ContentRepository {
 
     public function createArticle(array $data, int $authorId): int {
         $stmt = $this->db->prepare("
-            INSERT INTO articles (title, slug, excerpt, content, category_id, image_url, status, author_id, published_at)
-            VALUES (:title, :slug, :excerpt, :content, :category_id, :image_url, :status, :author_id, :published_at)
+            INSERT INTO articles (title, slug, excerpt, content, category_id, image_url, status, author_id, published_at, read_time_minutes)
+            VALUES (:title, :slug, :excerpt, :content, :category_id, :image_url, :status, :author_id, :published_at, :read_time_minutes)
         ");
         $status = $data['status'] ?? 'draft';
         $stmt->execute([
@@ -233,7 +233,8 @@ class ContentRepository {
             'image_url' => $data['image_url'] ?? null,
             'status' => $status,
             'author_id' => $authorId,
-            'published_at' => ($status === 'published') ? date('Y-m-d H:i:s') : null
+            'published_at' => ($status === 'published') ? date('Y-m-d H:i:s') : null,
+            'read_time_minutes' => $data['read_time_minutes'] ?? 5
         ]);
         return (int)$this->db->lastInsertId();
     }
@@ -241,7 +242,7 @@ class ContentRepository {
     public function updateArticle(int $id, array $data): void {
         $fields = [];
         $params = ['id' => $id];
-        $allowedFields = ['title', 'slug', 'excerpt', 'content', 'category_id', 'image_url', 'status'];
+        $allowedFields = ['title', 'slug', 'excerpt', 'content', 'category_id', 'image_url', 'status', 'read_time_minutes'];
         
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -408,5 +409,57 @@ class ContentRepository {
             INSERT IGNORE INTO newsletter_subscribers (email) VALUES (?)
         ");
         $stmt->execute([$email]);
+    }
+
+    // =========================================================
+    // CONTACT OPTIONS
+    // =========================================================
+    public function getContactOptions(bool $activeOnly = false): array {
+        $query = "SELECT * FROM contact_interest_options";
+        if ($activeOnly) {
+            $query .= " WHERE is_active = 1";
+        }
+        $query .= " ORDER BY sort_order ASC, id ASC";
+        $stmt = $this->db->query($query);
+        return $stmt->fetchAll();
+    }
+
+    public function createContactOption(array $data): int {
+        $stmt = $this->db->prepare("
+            INSERT INTO contact_interest_options (label, value, is_active, sort_order)
+            VALUES (:label, :value, :is_active, :sort_order)
+        ");
+        $stmt->execute([
+            'label' => $data['label'],
+            'value' => $data['value'],
+            'is_active' => $data['is_active'] ?? 1,
+            'sort_order' => $data['sort_order'] ?? 0
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function updateContactOption(int $id, array $data): void {
+        $fields = [];
+        $params = ['id' => $id];
+        $allowedFields = ['label', 'value', 'is_active', 'sort_order'];
+        
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                $params[$field] = $data[$field];
+            }
+        }
+        
+        if (empty($fields)) return;
+        $query = "UPDATE contact_interest_options SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+    }
+
+    public function deleteContactOption(int $id): void {
+        // Soft delete logic can be applied if needed, but the plan is to allow physical deletion if not used, or just let foreign keys (if any) handle it.
+        // The instructions said "Prefer disable/archive". Admin UI should prefer toggling is_active.
+        $stmt = $this->db->prepare("DELETE FROM contact_interest_options WHERE id = :id");
+        $stmt->execute(['id' => $id]);
     }
 }
