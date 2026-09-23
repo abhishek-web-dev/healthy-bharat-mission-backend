@@ -5,6 +5,7 @@ namespace HBM\Controllers;
 use HBM\Services\AuthService;
 use HBM\Helpers\Request;
 use HBM\Helpers\Response;
+use HBM\Middleware\AuthMiddleware;
 use Exception;
 
 class AuthController {
@@ -33,8 +34,15 @@ class AuthController {
             $ip = $_SERVER['REMOTE_ADDR'] ?? '';
             $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-            $token = $this->authService->login($identifier, $password, $ip, $ua);
+            $result = $this->authService->login($identifier, $password, $ip, $ua);
             
+            if (is_array($result) && isset($result['requires_2fa'])) {
+                Response::success("2FA Required.", $result);
+                return;
+            }
+            
+            $token = $result;
+
             // Set HttpOnly Cookie for security
             setcookie('auth_token', $token, [
                 'expires' => time() + (30 * 24 * 60 * 60),
@@ -163,8 +171,11 @@ class AuthController {
 
     public function changePassword(): void {
         try {
-            $authUser = AuthMiddleware::authenticate();
-            if (!$authUser) return;
+            global $authUser;
+            if (!$authUser) {
+                Response::error("Unauthorized", 401);
+                return;
+            }
 
             $data = Request::getJson();
             $this->authService->changePassword(
@@ -181,8 +192,11 @@ class AuthController {
 
     public function deleteAccount(): void {
         try {
-            $authUser = AuthMiddleware::authenticate();
-            if (!$authUser) return;
+            global $authUser;
+            if (!$authUser) {
+                Response::error("Unauthorized", 401);
+                return;
+            }
 
             $data = Request::getJson();
             $this->authService->deleteAccount(

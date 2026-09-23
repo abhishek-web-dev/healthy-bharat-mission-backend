@@ -213,4 +213,25 @@ class UserController {
             Response::error($e->getMessage(), 404);
         }
     }
+    public function getSettings(): void {
+        global $authUser;
+        try {
+            $settings = $this->userService->getSettings($authUser['id']);
+            Response::success('Settings fetched successfully.', $settings);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function updateTwoFactor(): void {
+        global $authUser;
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $enabled = isset($data['enabled']) && $data['enabled'];
+            $this->userService->updateTwoFactor($authUser['id'], $enabled);
+            Response::success('2FA setting updated successfully.');
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
 }

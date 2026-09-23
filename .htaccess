@@ -1,6 +1,9 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Allow direct access to invoices
+    RewriteRule ^storage/invoices/.*$ - [L]
+
     # Block access to sensitive files and directories
     RewriteRule ^(\.env.*|composer\..*|nixpacks\.toml|\.git/.*|src/.*|database/.*|scripts/.*|storage/.*|vendor/.*)$ - [F,L,NC]
     RewriteRule ^(src|database|scripts|storage|vendor)$ - [F,L,NC]

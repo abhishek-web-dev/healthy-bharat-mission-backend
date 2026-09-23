@@ -49,26 +49,65 @@ class DatabaseBackupService {
             throw new Exception("Database configuration is missing.");
         }
 
-        // 3. Construct command securely
-        // Using mysqldump piped into gzip
-        $cmd = sprintf(
-            'mysqldump --no-tablespaces -h %s -P %s -u %s %s %s | gzip > %s',
-            escapeshellarg($dbHost),
-            escapeshellarg($dbPort),
-            escapeshellarg($dbUser),
-            !empty($dbPass) ? '-p' . escapeshellarg($dbPass) : '',
-            escapeshellarg($dbName),
-            escapeshellarg($filePath)
-        );
-
-        // 4. Execute command
-        $output = [];
-        $returnVar = 0;
-        exec($cmd . ' 2>&1', $output, $returnVar);
+        // 3. Generate backup using native PHP PDO
+        try {
+            $pdo = new \PDO("mysql:host=$dbHost;port=$dbPort;dbname=$dbName", $dbUser, $dbPass);
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            
+            $fp = gzopen($filePath, 'w9');
+            if (!$fp) {
+                throw new Exception("Could not open backup file for writing.");
+            }
+            
+            $stmt = $pdo->query('SHOW TABLES');
+            $tables = [];
+            while ($row = $stmt->fetch(\PDO::FETCH_NUM)) {
+                $tables[] = $row[0];
+            }
+            
+            gzwrite($fp, "-- Database Backup: $dbName\n-- Generated on " . date('Y-m-d H:i:s') . "\n\n");
+            gzwrite($fp, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+            
+            foreach ($tables as $table) {
+                $stmt = $pdo->query("SHOW CREATE TABLE `$table`");
+                $row = $stmt->fetch(\PDO::FETCH_NUM);
+                gzwrite($fp, "DROP TABLE IF EXISTS `$table`;\n");
+                gzwrite($fp, $row[1] . ";\n\n");
+                
+                $stmt = $pdo->query("SELECT * FROM `$table`");
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $keys = array_keys($row);
+                    $values = [];
+                    foreach ($row as $val) {
+                        if ($val === null) {
+                            $values[] = "NULL";
+                        } else {
+                            $values[] = $pdo->quote($val);
+                        }
+                    }
+                    $sql = "INSERT INTO `$table` (`" . implode("`, `", $keys) . "`) VALUES (" . implode(", ", $values) . ");\n";
+                    gzwrite($fp, $sql);
+                }
+                gzwrite($fp, "\n");
+            }
+            
+            gzwrite($fp, "SET FOREIGN_KEY_CHECKS=1;\n");
+            gzclose($fp);
+            $returnVar = 0;
+            $errorMsg = "";
+        } catch (\Exception $e) {
+            $returnVar = 1;
+            $errorMsg = $e->getMessage();
+            if (isset($fp) && is_resource($fp)) {
+                gzclose($fp);
+            }
+        }
 
         // 5. Verify Backup
         if ($returnVar !== 0 || !file_exists($filePath) || filesize($filePath) === 0) {
-            $errorMsg = "Command failed with code $returnVar.";
+            if (empty($errorMsg)) {
+                $errorMsg = "Command failed with code $returnVar.";
+            }
             if (file_exists($filePath) && filesize($filePath) === 0) {
                 $errorMsg = "Created backup file is empty.";
                 unlink($filePath); // Clean up empty file

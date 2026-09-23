@@ -11,8 +11,18 @@ class Request {
     
     public static function getBearerToken(): ?string {
         $headers = self::getHeaders();
-        if (isset($headers['Authorization'])) {
-            if (preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+        
+        // Find Authorization header case-insensitively
+        $authHeader = null;
+        foreach ($headers as $name => $value) {
+            if (strtolower($name) === 'authorization') {
+                $authHeader = $value;
+                break;
+            }
+        }
+
+        if ($authHeader) {
+            if (preg_match('/Bearer\s(\S+)/i', $authHeader, $matches)) {
                 return $matches[1];
             }
         }

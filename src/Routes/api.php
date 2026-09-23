@@ -62,6 +62,14 @@ $router->post('/api/user/emergency-contacts', function() use ($router) {
     AuthMiddleware::handle();
     (new UserController())->addEmergencyContact();
 });
+$router->get('/api/user/settings', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->getSettings();
+});
+$router->put('/api/user/settings/2fa', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserController())->updateTwoFactor();
+});
 $router->get('/api/user/programs', function() use ($router) {
     AuthMiddleware::handle();
     (new UserController())->getPrograms();
@@ -234,6 +242,17 @@ $router->get('/api/admin/dashboard-stats', function() use ($router) {
     (new AdminDashboardController())->getStats();
 });
 
+// User Appointments Routes
+use HBM\Controllers\UserAppointmentController;
+$router->get('/api/user/appointments', function() use ($router) {
+    AuthMiddleware::handle();
+    (new UserAppointmentController())->getAppointments();
+});
+$router->put('/api/user/appointments/{id}/cancel', function($id) use ($router) {
+    AuthMiddleware::handle();
+    (new UserAppointmentController())->cancelAppointment($id);
+});
+
 // Admin User Management Routes
 use HBM\Controllers\AdminUserController;
 use HBM\Controllers\AdminTeamController;
@@ -345,7 +364,7 @@ $router->post('/api/admin/products', function() use ($router) {
     AuthMiddleware::requirePermission('create_products');
     (new AdminProductController())->createProduct();
 });
-$router->put('/api/admin/products/{id}', function($id) use ($router) {
+$router->post('/api/admin/products/{id}', function($id) use ($router) {
     AuthMiddleware::requirePermission('edit_products');
     (new AdminProductController())->updateProduct($id);
 });
@@ -456,6 +475,14 @@ $router->put('/api/admin/appointments/{id}', function($id) use ($router) {
 $router->get('/api/admin/contact-inquiries', function() use ($router) {
     AuthMiddleware::requirePermission('view_inquiries');
     (new AdminContentController())->listInquiries();
+});
+$router->get('/api/admin/contact-inquiries/{id}', function($id) use ($router) {
+    AuthMiddleware::requirePermission('view_inquiries');
+    (new AdminContentController())->getInquiry($id);
+});
+$router->put('/api/admin/contact-inquiries/{id}', function($id) use ($router) {
+    AuthMiddleware::requirePermission('view_inquiries'); // Or edit_inquiries if it exists, let's use view_inquiries as they are linked or we can omit it if it's broad. Wait, looking at sidebar, it uses view_inquiries. Let's use view_inquiries.
+    (new AdminContentController())->updateInquiryStatus($id);
 });
 $router->get('/api/admin/newsletter-subscribers', function() use ($router) {
     AuthMiddleware::requirePermission('view_subscribers');

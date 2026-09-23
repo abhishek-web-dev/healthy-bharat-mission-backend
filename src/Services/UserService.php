@@ -68,4 +68,12 @@ class UserService {
     public function deleteDocument(int $userId, int $docId): bool {
         return $this->userRepo->deleteDocument($userId, $docId);
     }
+
+    public function getSettings(int $userId): array {
+        return $this->userRepo->getSettings($userId);
+    }
+
+    public function updateTwoFactor(int $userId, bool $enabled): void {
+        $this->userRepo->updateTwoFactor($userId, $enabled);
+    }
 }

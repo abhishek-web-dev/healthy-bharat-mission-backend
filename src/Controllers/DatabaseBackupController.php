@@ -53,17 +53,24 @@ class DatabaseBackupController {
         global $authUser;
         try {
             $backup = $this->repo->getBackupById($id);
+            
+            $renderError = function($title, $msg) {
+                http_response_code(404);
+                echo "<!DOCTYPE html><html><head><title>Error</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><script src='https://cdn.tailwindcss.com'></script><link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'></head><body class='bg-gray-50 flex items-center justify-center min-h-screen p-4'><div class='bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-gray-100'><div class='inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-50 text-red-500 mb-6 border-4 border-red-100'><i class='fa-solid fa-triangle-exclamation text-3xl'></i></div><h1 class='text-2xl font-bold text-gray-800 mb-3'>{$title}</h1><p class='text-gray-500 mb-8 leading-relaxed'>{$msg}</p><button onclick='window.close()' class='w-full py-3 px-4 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-colors'>Close Window</button></div></body></html>";
+                exit;
+            };
+
             if (!$backup) {
-                Response::error('Backup not found', 404);
+                $renderError("Backup Not Found", "The requested backup record could not be found.");
             }
 
             if ($backup['status'] !== 'SUCCESS') {
-                Response::error('Cannot download an incomplete or failed backup.', 400);
+                $renderError("Invalid Backup", "Cannot download an incomplete or failed backup.");
             }
 
             $filePath = $backup['storage_path'];
             if (!file_exists($filePath)) {
-                Response::error('Backup file is missing from storage.', 404);
+                $renderError("Backup File Missing", "The requested backup file is missing from storage.");
             }
 
             // Log download action

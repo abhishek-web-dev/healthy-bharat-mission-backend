@@ -36,8 +36,24 @@ class AdminOrderService {
             throw new Exception("Order not found");
         }
 
-        $this->repo->updateOrderStatus($id, $status);
-        AdminActivityLogger::log($adminId, 'UPDATE_ORDER_STATUS', 'orders', $id, ['new_status' => $status]);
+        $currentStatus = $order['order_status'] ?? 'pending';
+        
+        // Define allowed transitions
+        $allowedTransitions = [
+            'pending' => ['processing', 'shipped', 'delivered', 'cancelled'],
+            'processing' => ['shipped', 'delivered', 'cancelled'],
+            'shipped' => ['delivered', 'cancelled'],
+            'delivered' => [],
+            'cancelled' => []
+        ];
+
+        if ($currentStatus !== $status) {
+            if (!isset($allowedTransitions[$currentStatus]) || !in_array($status, $allowedTransitions[$currentStatus])) {
+                throw new Exception("Invalid order transition from '{$currentStatus}' to '{$status}'.");
+            }
+            $this->repo->updateOrderStatus($id, $status);
+            AdminActivityLogger::log($adminId, 'UPDATE_ORDER_STATUS', 'orders', $id, ['new_status' => $status]);
+        }
     }
 
     public function updatePaymentStatus(int $adminId, int $id, string $status): void {

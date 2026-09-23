@@ -126,8 +126,14 @@ class ContentController {
     public function submitContact(): void {
         try {
             $data = Request::getJson();
-            $this->service->submitContactInquiry($data);
-            Response::success("Thank you. Your inquiry has been submitted.", [], 201);
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $emailSent = $this->service->submitContactInquiry($data, $ip);
+            
+            if ($emailSent) {
+                Response::success("Thank you. Your inquiry has been submitted and our team has been notified.", ['email_sent' => true], 201);
+            } else {
+                Response::success("Thank you. Your inquiry has been saved successfully, but we are experiencing a slight delay with email notifications. Our team will review it shortly.", ['email_sent' => false], 201);
+            }
         } catch (Exception $e) {
             Response::error($e->getMessage(), $e->getCode() ?: 400);
         }

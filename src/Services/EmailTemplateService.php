@@ -195,4 +195,69 @@ class EmailTemplateService {
         ";
         return self::getBaseTemplate($title, $content);
     }
+
+    public static function getWelcomeEmail(): string {
+        $title = "Welcome to Healthy Bharat Mission!";
+        $content = <<<HTML
+        <p>Hello,</p>
+        <p>Welcome to Healthy Bharat Mission! We're thrilled to have you join our community dedicated to health and wellness.</p>
+        <p>You can now log in to your dashboard to track your orders, manage your health profile, and explore our programs.</p>
+        <div class="btn-container">
+            <a href="https://healthybharatmission.com/auth/login" class="btn" style="color: #ffffff;">Go to Dashboard</a>
+        </div>
+        HTML;
+        return self::getBaseTemplate($title, $content);
+    }
+
+    public static function getPaymentConfirmationEmail(array $order): string {
+        $title = "Payment Received";
+        $orderNumber = htmlspecialchars($order['order_number'] ?? '');
+        $content = <<<HTML
+        <p>Hello,</p>
+        <p>We have successfully received your payment for Order <strong>#{$orderNumber}</strong>.</p>
+        <p>Thank you for your purchase. We are now processing your order and will notify you once it's on its way.</p>
+        HTML;
+        return self::getBaseTemplate($title, $content);
+    }
+
+    public static function getContactInquiryEmail(string $name, string $subject): string {
+        $title = "We've Received Your Inquiry";
+        $content = <<<HTML
+        <p>Hello {$name},</p>
+        <p>Thank you for reaching out to us regarding "{$subject}".</p>
+        <p>We have received your message and our team will get back to you as soon as possible, usually within 1-2 business days.</p>
+        <p>If you have any urgent concerns, please feel free to reply directly to this email.</p>
+        HTML;
+        return self::getBaseTemplate($title, $content);
+    }
+
+    public static function getCustomerSupportEmail(string $name): string {
+        $title = "Support Request Received";
+        $content = <<<HTML
+        <p>Hello {$name},</p>
+        <p>Thank you for contacting Healthy Bharat Mission Customer Support.</p>
+        <p>We have received your support request and a member of our team is reviewing it. We will be in touch with you shortly.</p>
+        HTML;
+        return self::getBaseTemplate($title, $content);
+    }
+
+    public static function getProgramEmail(string $name): string {
+        $title = "Program Inquiry Received";
+        $content = <<<HTML
+        <p>Hello {$name},</p>
+        <p>Thank you for your interest in our Health Programs & Courses.</p>
+        <p>Our program coordinators are reviewing your inquiry and will contact you with more details shortly to help you get started on your health journey.</p>
+        HTML;
+        return self::getBaseTemplate($title, $content);
+    }
+
+    public static function getAppointmentEmail(string $name): string {
+        $title = "Consultation Request Received";
+        $content = <<<HTML
+        <p>Hello {$name},</p>
+        <p>Thank you for requesting a consultation with us.</p>
+        <p>Our team has received your request and will contact you shortly to confirm the date and time of your appointment.</p>
+        HTML;
+        return self::getBaseTemplate($title, $content);
+    }
 }

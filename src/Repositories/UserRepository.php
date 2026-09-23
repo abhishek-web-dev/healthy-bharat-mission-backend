@@ -260,4 +260,16 @@ class UserRepository {
         $stmt->execute(['id' => $docId, 'user_id' => $userId]);
         return $stmt->rowCount() > 0;
     }
+
+    public function getSettings(int $userId): array {
+        $stmt = $this->getDb()->prepare("SELECT two_factor_enabled FROM users WHERE id = :user_id");
+        $stmt->execute(['user_id' => $userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $row ?: ['two_factor_enabled' => false];
+    }
+
+    public function updateTwoFactor(int $userId, bool $enabled): void {
+        $stmt = $this->getDb()->prepare("UPDATE users SET two_factor_enabled = :enabled WHERE id = :user_id");
+        $stmt->execute(['enabled' => $enabled ? 1 : 0, 'user_id' => $userId]);
+    }
 }

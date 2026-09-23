@@ -107,7 +107,11 @@ class StoreController {
                 for ($i = 0; $i < $fileCount; $i++) {
                     if ($_FILES['photos']['error'][$i] !== UPLOAD_ERR_OK) {
                         if ($_FILES['photos']['error'][$i] === UPLOAD_ERR_NO_FILE) continue;
-                        Response::error("Error uploading photo " . ($i + 1), 400);
+                        if ($_FILES['photos']['error'][$i] === UPLOAD_ERR_INI_SIZE) {
+                            Response::error("Photo " . ($i + 1) . " is too large (exceeds server's max upload size).", 400);
+                            return;
+                        }
+                        Response::error("Error uploading photo " . ($i + 1) . " (Code: " . $_FILES['photos']['error'][$i] . ")", 400);
                         return;
                     }
 

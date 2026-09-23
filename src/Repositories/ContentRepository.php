@@ -139,7 +139,7 @@ class ContentRepository {
     // =========================================================
     public function getArticles(array $filters = [], int $page = 1, int $perPage = 12): array {
         $query = "
-            SELECT a.id, a.title, a.slug, a.excerpt, a.image_url, a.status, a.published_at, 
+            SELECT a.id, a.title, a.slug, a.excerpt, a.image_url, a.status, a.published_at, a.read_time_minutes,
                    c.name as category_name, c.slug as category_slug,
                    u.first_name as author_first_name, u.last_name as author_last_name
             FROM articles a
@@ -194,7 +194,13 @@ class ContentRepository {
     }
 
     public function getArticleCategories(): array {
-        $stmt = $this->db->query("SELECT * FROM article_categories ORDER BY name ASC");
+        $stmt = $this->db->query("
+            SELECT c.*, COUNT(a.id) as article_count 
+            FROM article_categories c
+            LEFT JOIN articles a ON a.category_id = c.id AND a.status = 'published'
+            GROUP BY c.id
+            ORDER BY c.name ASC
+        ");
         return $stmt->fetchAll();
     }
 
@@ -307,6 +313,13 @@ class ContentRepository {
     public function getAdminInquiries(int $page = 1, int $perPage = 50): array {
         $query = "SELECT id, name, email, phone, subject, message, status, created_at FROM contact_inquiries ORDER BY created_at DESC";
         return $this->paginate($query, [], $page, $perPage);
+    }
+
+    public function getInquiryById(int $id): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM contact_inquiries WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $inquiry = $stmt->fetch();
+        return $inquiry ?: null;
     }
 
     public function updateInquiryStatus(int $id, string $status): void {
@@ -462,4 +475,45 @@ class ContentRepository {
         $stmt = $this->db->prepare("DELETE FROM contact_interest_options WHERE id = :id");
         $stmt->execute(['id' => $id]);
     }
+
+    public function checkRateLimit(string $ip): bool {
+        // Create table if not exists
+        $this->db->exec("
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                ip VARCHAR(45) PRIMARY KEY,
+                requests INT DEFAULT 1,
+                last_request INT
+            )
+        ");
+
+        $stmt = $this->db->prepare("SELECT requests, last_request FROM rate_limits WHERE ip = ?");
+        $stmt->execute([$ip]);
+        $row = $stmt->fetch();
+
+        $currentTime = time();
+        $limitWindow = 3600; // 1 hour
+        $maxRequests = 5;
+
+        if ($row) {
+            if ($currentTime - $row['last_request'] > $limitWindow) {
+                // Reset limit
+                $stmt = $this->db->prepare("UPDATE rate_limits SET requests = 1, last_request = ? WHERE ip = ?");
+                $stmt->execute([$currentTime, $ip]);
+                return true;
+            } else {
+                if ($row['requests'] >= $maxRequests) {
+                    return false; // Rate limit exceeded
+                } else {
+                    $stmt = $this->db->prepare("UPDATE rate_limits SET requests = requests + 1, last_request = ? WHERE ip = ?");
+                    $stmt->execute([$currentTime, $ip]);
+                    return true;
+                }
+            }
+        } else {
+            $stmt = $this->db->prepare("INSERT INTO rate_limits (ip, requests, last_request) VALUES (?, 1, ?)");
+            $stmt->execute([$ip, $currentTime]);
+            return true;
+        }
+    }
+
 }

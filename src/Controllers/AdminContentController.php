@@ -180,8 +180,39 @@ class AdminContentController {
     }
 
     public function listInquiries(): void {
-        // TODO: Fetch from Repository
-        Response::success("Admin: Contact Inquiries retrieved", []);
+        try {
+            $page = (int)($_GET['page'] ?? 1);
+            $perPage = (int)($_GET['per_page'] ?? 50);
+            $result = $this->service->getAdminInquiries($page, $perPage);
+            Response::success("Admin: Contact Inquiries retrieved", $result);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    public function getInquiry(string $id): void {
+        try {
+            $result = $this->service->getInquiryById((int)$id);
+            Response::success("Admin: Inquiry retrieved", $result);
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 404);
+        }
+    }
+
+    public function updateInquiryStatus(string $id): void {
+        try {
+            global $authUser;
+            $data = Request::getJson();
+            $status = $data['status'] ?? '';
+            if (empty($status)) {
+                throw new \Exception("Status is required");
+            }
+            $this->service->updateInquiryStatus((int)$id, $status);
+            \HBM\Services\AdminActivityLogService::log($authUser['id'] ?? 0, 'INQUIRY_STATUS_UPDATED', 'contact_inquiries', (int)$id);
+            Response::success("Inquiry status updated successfully");
+        } catch (\Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
     }
 
     public function listSubscribers(): void {

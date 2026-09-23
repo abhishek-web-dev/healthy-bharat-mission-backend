@@ -40,6 +40,7 @@ CREATE TABLE `users` (
     `email` VARCHAR(150) UNIQUE DEFAULT NULL,
     `phone` VARCHAR(20) UNIQUE DEFAULT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
+    `two_factor_enabled` BOOLEAN DEFAULT FALSE,
     `role_id` BIGINT UNSIGNED NOT NULL,
     `status` ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

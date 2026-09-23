@@ -69,7 +69,7 @@ class AuthService {
         ];
     }
 
-    public function login(string $identifier, string $password, string $ip, string $userAgent): string {
+    public function login(string $identifier, string $password, string $ip, string $userAgent): array|string {
         $user = $this->authRepo->getUserByEmailOrPhone($identifier);
         
         if (!$user) {
@@ -85,6 +85,12 @@ class AuthService {
         if (!password_verify($password, $user['password_hash'])) {
             Logger::warning("Failed login attempt - wrong password", ['user_id' => $user['id']]);
             throw new Exception("Invalid credentials.");
+        }
+
+        if (isset($user['two_factor_enabled']) && $user['two_factor_enabled']) {
+            Logger::info("User requires 2FA", ['user_id' => $user['id']]);
+            $this->generateOtp($user['email'], 'login');
+            return ['requires_2fa' => true, 'identifier' => $user['email']];
         }
 
         // Generate secure token
@@ -144,13 +150,24 @@ class AuthService {
         $this->authRepo->markOtpAsUsed($otp['id']);
         Logger::info("OTP Verified successfully", ['identifier' => $identifier]);
         
-        // If purpose is registration, log the user in automatically
-        if ($type === 'registration') {
+        // If purpose is registration or login, log the user in automatically
+        if ($type === 'registration' || $type === 'login') {
             $user = $this->authRepo->getUserByEmailOrPhone($identifier);
             if ($user) {
-                // Activate the account
+                // Activate the account (if registration)
                 if ($user['status'] === 'inactive') {
                     $this->authRepo->updateUserStatus($user['id'], 'active');
+                    
+                    // Send Welcome Email
+                    if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                        try {
+                            $subject = "Welcome to Healthy Bharat Mission!";
+                            $message = EmailTemplateService::getWelcomeEmail();
+                            $this->emailService->sendEmail($identifier, $subject, $message);
+                        } catch (Exception $e) {
+                            Logger::error("Failed to send welcome email to $identifier", ['error' => $e->getMessage()]);
+                        }
+                    }
                 }
                 
                 $token = bin2hex(random_bytes(32));

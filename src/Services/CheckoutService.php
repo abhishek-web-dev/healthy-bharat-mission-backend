@@ -377,6 +377,18 @@ class CheckoutService {
                 $this->checkoutRepo->updateOrderStatus($localOrderId, 'processing');
                 $this->checkoutRepo->commit();
                 
+                // Send Payment Confirmation Email First
+                try {
+                    $orderData = $this->checkoutRepo->getOrderDetails($localOrderId, $userId);
+                    if ($orderData && !empty($orderData['shipping_email'])) {
+                        $paymentSubject = "Payment Received - " . $orderData['order_number'];
+                        $paymentMsg = \HBM\Services\EmailTemplateService::getPaymentConfirmationEmail($orderData);
+                        $this->emailService->sendEmail($orderData['shipping_email'], $paymentSubject, $paymentMsg);
+                    }
+                } catch (\Exception $e) {
+                    \HBM\Helpers\Logger::error("Failed to send payment confirmation email", ['error' => $e->getMessage()]);
+                }
+                
                 $this->processOrderSuccess($userId, $localOrderId);
                 return ['status' => 'success', 'message' => 'Payment captured and processed'];
             } catch (Exception $e) {
